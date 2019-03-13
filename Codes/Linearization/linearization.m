@@ -94,9 +94,17 @@ GBC = jacobian(Dx,BC);
 Gd = jacobian(Dx,d);
 % Substitutions check the values
 A = subs(A,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
+B = subs(B,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
 A = subs(A,{h1 h2 hL hG hR hMT hHR hC hF},num2cell([450 325 212 430 290 525 525 460 460]*10^3));
 A = subs(A,{delta_hHR delta_h2},num2cell([0 325-298]*10^3));
 A = subs(A,{d1 d2 dR dG dBP dA},...
+    num2cell([CoolProp.PropsSI('D','P',86.5e5,'H',450e3,'CO2') ...
+    CoolProp.PropsSI('D','P',85e5,'H',325e3,'CO2') ...
+    CoolProp.PropsSI('D','P',38e5,'H',290e3,'CO2') ...
+    CoolProp.PropsSI('D','P',38e5,'H',430e3,'CO2') ...
+    CoolProp.PropsSI('D','P',85e5,'H',298e3,'CO2') ...
+    1.2]));
+B = subs(B,{d1 d2 dR dG dBP dA},...
     num2cell([CoolProp.PropsSI('D','P',86.5e5,'H',450e3,'CO2') ...
     CoolProp.PropsSI('D','P',85e5,'H',325e3,'CO2') ...
     CoolProp.PropsSI('D','P',38e5,'H',290e3,'CO2') ...
@@ -112,14 +120,18 @@ A = subs(A,{TA2 TA1 T1 T2 TBP TA0},...
     30+273.15]));
 A = subs(A,{DmV DmG DmL Dm21},num2cell([0.321 0.123 0.198 0.321]));
 A = subs(A,{DVA MxDVA},{3.33 6.66});
+B = subs(B,{DVA MxDVA},{3.33 6.66});
 A = subs(A,{BP CRV},num2cell([0 0.25]));
 A = subs(A,{DQC DQF},num2cell([36 11]*10^3));
 A = subs(A,{KvV KvG},num2cell([0.8 2]*8.7841e-06));
+B = subs(B,{KvV KvG},num2cell([0.8 2]*8.7841e-06));
 A = subs(A,{TauV TauG TauVA TauBP TauBC TauR TauTA TauIT},num2cell([1 1 5 1 10 1 10 5]));
+B = subs(B,{TauV TauG TauVA TauBP TauBC TauR TauTA TauIT},num2cell([1 1 5 1 10 1 10 5]));
 A = subs(A,{R},num2cell(2.5*10^4));
 A = subs(A,{eS},num2cell(0.6));
 A = subs(A,{s0 k cp},num2cell([5000/2 6000/2 1000]));
 A = subs(A,{Vc VR VIT},num2cell([19.2/2 133 0.1]*10^-3));
+B = subs(B,{Vc VR VIT},num2cell([19.2/2 133 0.1]*10^-3));
 A = subs(A,{DdDp1 DdDp2 DdDpR},num2cell([...
     CoolProp.PropsSI('d(D)/d(P)|H','P',86.5e5,'H',450e3,'CO2') ...
     CoolProp.PropsSI('d(D)/d(P)|H','P',85e5,'H',325e3,'CO2') ...
@@ -139,10 +151,12 @@ A = subs(A,{delta_hpIT},num2cell(...
 CoolProp.PropsSI('S','P',38e5,'H',430e3,'CO2'),'CO2')-430e3)/...
 (86.5e5-38e5)));
 A = double(A);
+B = double(B);
 % ----------------------- POSTPROCESSING ----------------------------------
 % Normalizing with maximum required deviations
 % x = [DVA; p1; h1; d1; T1; TA2; Dm21; p2; h2; d2; T2; TA1; BP; DmV; pR; hR; dR; DmG; DmL];
 condA = cond(A)
+disp('The condition of the matrix indicates the relative sensitivies within the system')
 DVBound = 1;
 pBound = 5*10^5;
 hBound = 20*10^3;
@@ -164,9 +178,47 @@ B = T*B;
 GBC = T*GBC;
 Gd = T*Gd;
 condA = cond(A)
+disp('The condition of the matrix decreased by normalizing')
 expA = sign(A).*exp(abs(A));
 expA(A==0) = 0;
+% ------------------------ MODAL ANALYSIS ---------------------------------
+% Modal analysis
+% Wt A = E Wt
+% Wt A / Wt = E
+% Dz = E z
+% Dz = Wt A / Wt z
+% Wt \ Dz = A / Wt z
+% z = Wt x
+[~,E,W] = eig(A);
+Wt = W';
+norm(Wt\E*Wt-A,Inf)
+disp('The smaller this norm, the more reliable the modal matrix is')
+% Separating real and imaginary values
+Wt = real([Wt(1,:); real(Wt(2,:)); imag(Wt(2,:));...
+    Wt(4:8,:); real(Wt(9,:)); imag(Wt(9,:));...
+    Wt(11,:); real(Wt(12,:)); imag(Wt(12,:)); Wt(14:end,:)]);
+realexpeigA = sign(real(E)).*exp(abs(real(E)));
+realexpeigA(real(E)==0) = 0;
+imagexpeigA = sign(imag(E)).*exp(abs(imag(E)));
+imagexpeigA(imag(E)==0) = 0;
+% ----------------------- CONTROLLABILITY ---------------------------------
+C = zeros(19,1);
+C([8,11,12,15]) = 1;
+C = diag(C);
+[AC,BC,CC,TC,KC] = ctrbf(A,B,C,1e-10);
+norm(AC-TC*A/TC,Inf)
+disp('The smaller this norm, the more reliable the controllability staircase form is')
+rankCTRB = sum(KC)
+disp(['The system is not fully controllable, there are ' num2str(length(AC)-rankCTRB)...
+    ' poles in the uncontrollable subspace'])
+EnC = round(real(eig(AC(1:(length(AC)-rankCTRB),1:(length(AC)-rankCTRB)))),10);
+disp(['There are ' num2str(sum(EnC==0))...
+    ' integrators in the uncontrollable subspace, and ' num2str(sum(EnC<0))...
+    ' a stable pole'])
+expAC = sign(AC).*exp(abs(AC));
+expAC(round(AC,10)==0) = 0;
 % -------------------------- PLOTTING -------------------------------------
+% System matrix
 figure(1)
 imagesc(expA,[-10 10])
 colormap('jet')
@@ -175,40 +227,48 @@ xlabel(char(x))
 ylabel(['Diff' char(x)])
 title('Pieceswise exponential of normalized system A, bounded by -10...10')
 % Modal analysis
-% Vz = x
-% Dz = V\AVz
-% V\AV = D
-% AV = VD
-[V,eigA] = eig(A);
-V*eigA/V-A
-invV = inv(V);
-% Separating real and imaginary values
-invV = real([invV(1:9,:); real(invV(10,:)); imag(invV(10,:));...
-    invV(12:14,:); real(invV(15,:)); imag(invV(15,:));...
-    real(invV(17,:)); imag(invV(17,:)); invV(19,:)]);
 figure(2)
-subplot(131)
-imagexpeigA = sign(imag(eigA)).*exp(abs(imag(eigA)));
-imagexpeigA(imag(eigA)==0) = 0;
-imagesc(imagexpeigA,[-10^0.5 10^0.5])
+subplot(141)
+imagesc(diag(imagexpeigA),[-10^0.5 10^0.5])
 colormap('jet')
 colorbar
 xlabel('z')
 ylabel('Dz')
 title('imagexpeigA')
-subplot(132)
-realexpeigA = sign(real(eigA)).*exp(abs(real(eigA)));
-realexpeigA(real(eigA)==0) = 0;
-imagesc(realexpeigA,[-10 10])
+subplot(142)
+imagesc(diag(realexpeigA),[-10 10])
 colormap('jet')
 colorbar
 xlabel('z')
 ylabel('Dz')
 title('realexpeigA')
-subplot(133)
-imagesc(invV,[-10^1 10^1])
+subplot(122)
+imagesc(Wt,[-1 1])
 colormap('jet')
 colorbar
 xlabel(char(x))
 ylabel('z')
-title('inv(V) reordered')
+title('Wt, reordered')
+% Controllability analysis
+figure(3)
+subplot(131)
+imagesc(expAC,[-10^0.5 10^0.5])
+colormap('jet')
+colorbar
+xlabel('z')
+ylabel('Dz')
+title('expAC')
+subplot(132)
+imagesc(TC,[-10^0 10^0])
+colormap('jet')
+colorbar
+xlabel(char(x))
+ylabel('z')
+title('T, to xC from x')
+subplot(133)
+imagesc(B,[-10^-1 10^-1])
+colormap('jet')
+colorbar
+xlabel(char(u))
+ylabel(char(x))
+title('B')
