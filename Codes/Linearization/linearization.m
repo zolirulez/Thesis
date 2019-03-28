@@ -14,7 +14,7 @@ syms DmV DmG DmL Dm21                   % Mass flow rates
 syms DVA MxDVA                          % Volume flow rate of air and its maximum
 syms s s0 k                             % Convection parameters
 syms cp                                 % Specific heat capacity of air
-syms TA1 TA2 T1 T2 TBP TA0              % Temperatures
+syms TA1 TA2 T1 T2 TA0                  % Temperatures
 syms DQC DQF                            % Heat flow rates
 % Partial derivatives
 syms DdDp1 DdDp2 DdDpR                  % From pressure to density
@@ -85,13 +85,15 @@ DDVA = 1/TauVA*(-DVA + dA*MxDVA*fA);
 Dx = [DDVA; Dph1; Dd1; DT1; DTA2; DDm21; Dph2; Dd2; DT2; DTA1; DBP; DDmV; DphR; DdR; DDmG; DDmL];
 x = [DVA; p1; h1; d1; T1; TA2; Dm21; p2; h2; d2; T2; TA1; BP; DmV; pR; hR; dR; DmG; DmL];
 u = [fA; BPR; CRV; fIT];
-BC = [TA0; dA; delta_hHR; hC; hF; hMT; DQC; DQF];
-d = [TBP; dBP; dG; delta_h2; hG; hL; delta_hpIT];
+BC = [TA0; dA; delta_hHR; hMT; DQC; DQF];       % Decided in simulator, assumed to be known
+dDer = [dBP; dG; hG; hL; hC; hF; delta_hpIT];   % Derived from estimations / measurements
+dDis = [delta_h2];                              % Unknown input to be estimated
 % Jacobians
 A = jacobian(Dx,x);
 B = jacobian(Dx,u);
 GBC = jacobian(Dx,BC);
-Gd = jacobian(Dx,d);
+GDer = jacobian(Dx,dDer);
+GdDer = jacobian(Dx,dDis);
 % Substitutions check the values
 A = subs(A,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
 B = subs(B,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
@@ -111,12 +113,11 @@ B = subs(B,{d1 d2 dR dG dBP dA},...
     CoolProp.PropsSI('D','P',38e5,'H',430e3,'CO2') ...
     CoolProp.PropsSI('D','P',85e5,'H',298e3,'CO2') ...
     1.2]));
-A = subs(A,{TA2 TA1 T1 T2 TBP TA0},...
+A = subs(A,{TA2 TA1 T1 T2 TA0},...
     num2cell([CoolProp.PropsSI('T','P',86.5e5,'H',450e3,'CO2')-20 ...
     CoolProp.PropsSI('T','P',85e5,'H',325e3,'CO2')-3 ...
     CoolProp.PropsSI('T','P',86.5e5,'H',450e3,'CO2') ...
     CoolProp.PropsSI('T','P',85e5,'H',325e3,'CO2') ...
-    33+273.15 ...
     30+273.15]));
 A = subs(A,{DmV DmG DmL Dm21},num2cell([0.321 0.123 0.198 0.321]));
 A = subs(A,{DVA MxDVA},{3.33 6.66});
@@ -148,8 +149,8 @@ A = subs(A,{DTDh1 DTDh2},num2cell([...
     CoolProp.PropsSI('d(T)/d(H)|P','P',85e5,'H',325e3,'CO2')]));
 A = subs(A,{delta_hpIT},num2cell(...
     (CoolProp.PropsSI('H','P',86.5e5,'S',...
-CoolProp.PropsSI('S','P',38e5,'H',430e3,'CO2'),'CO2')-430e3)/...
-(86.5e5-38e5)));
+    CoolProp.PropsSI('S','P',38e5,'H',430e3,'CO2'),'CO2')-430e3)/...
+    (86.5e5-38e5)));
 A = double(A);
 B = double(B);
 % ----------------------- POSTPROCESSING ----------------------------------
@@ -176,7 +177,8 @@ T = diag(1./[DVBound;...
 A = T*A/T;
 B = T*B;
 GBC = T*GBC;
-Gd = T*Gd;
+GdDer = T*GdDer;
+GdDis = T*GdDis;
 condA = cond(A)
 disp('The condition of the matrix decreased by normalizing')
 expA = sign(A).*exp(abs(A));
