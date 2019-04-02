@@ -63,12 +63,12 @@ DDmL = 1/TauBC*(-DmL + DmC + DmF);
 % Heat Recovery (no differentials)
 % Gas cooler
 DDm21 = 1/TauR*(-Dm21 + 1/R*sqrt(d1*(p1-p2)));
-Dd1 = 1/Vc*(Dm1-Dm21);
+Dd1 = 1/Vc*(Dm1-Dm21); % unctrb integrator, any of density dampings reduces the number by one
 Dd2 = 1/Vc*(Dm21-DmV*(1-BP));
-Dph1 = Joining1\[DPsi1/Vc; Dd1];
-Dph2 = Joining2\[DPsi2/Vc; Dd2];
-DT1 = [DTDp1 DTDh1]*Dph1;
-DT2 = [DTDp2 DTDh2]*Dph2;
+Dph1 = Joining1\[DPsi1/Vc; Dd1]; % unobsv integrator
+Dph2 = Joining2\[DPsi2/Vc; Dd2]; % unctrb integrator
+DT1 = [DTDp1 DTDh1]*Dph1; % unctrb integrator
+DT2 = [DTDp2 DTDh2]*Dph2; % unctrb integrator
 DTA1 = 1/TauTA*(-TA1 + 1/(w+1)*T2 + 1/(1/w+1)*TA0);
 DTA2 = 1/TauTA*(-TA2 + 1/(w+1)*T1 + 1/(1/w+1)*TA1);
 % ByPass Valve
@@ -77,14 +77,14 @@ DBP = 1/TauBP*(-BP + BPR);
 DDmV = 1/TauV*(-DmV + CRV*KvV*sqrt(dBP*(p2 - pR)));
 % Receiver
 DdR = 1/VR*(DmV-DmL-DmG);
-DphR = JointR\[DPsiR/VR; DdR];
+DphR = JointR\[DPsiR/VR; DdR]; % unctrb integrator
 % IT Compressor
 DDmG = 1/TauIT*(-DmG + dG*VIT*fIT);
 % Fan (A refers to air)
 DDVA = 1/TauVA*(-DVA + MxDVA*CRA);
 % Disturbances
-Ddelta_hJ = -eps*delta_hJ;
-Ddelta_h2 = -eps*delta_h2;
+Ddelta_hJ = -eps*delta_hJ; % unobsv, unctrb integrator
+Ddelta_h2 = -eps*delta_h2; % unobsv, unctrb integrator
 % ------------------------- MEASUREMENTS ----------------------------------
 p2m = p2;
 T2m = T2;
@@ -279,8 +279,8 @@ imagexpeigA = sign(imag(E)).*exp(abs(imag(E)));
 imagexpeigA(imag(E)==0) = 0;
 % ----------------------- CONTROLLABILITY ---------------------------------
 [AC,BC,CC,TC,KC] = ctrbf(A,B,C,1e-10);
-norm(AC-TC*A/TC,Inf)
-disp('The smaller this norm, the more reliable the controllability staircase form is')
+% norm(AC-TC*A/TC,Inf)
+% disp('The smaller this norm, the more reliable the controllability staircase form is')
 rankCTRB = sum(KC)
 disp(['The system is not fully controllable, there are ' num2str(length(AC)-rankCTRB)...
     ' poles in the uncontrollable subspace'])
@@ -293,8 +293,8 @@ expAC(round(AC,10)==0) = 0;
 GdC = TC*Gd;
 % ------------------------ OBSERVABILITY ----------------------------------
 [AO,BO,CO,TO,KO] = obsvf(A,B,C,1e-10);
-norm(AO-TO*A/TO,Inf)
-disp('The smaller this norm, the more reliable the observability staircase form is')
+% norm(AO-TO*A/TO,Inf)
+% disp('The smaller this norm, the more reliable the observability staircase form is')
 rankOBSV = sum(KO)
 disp(['The system is not fully observable, there are ' num2str(length(AO)-rankOBSV)...
     ' poles in the unobservable subspace'])
