@@ -1,7 +1,8 @@
 clearvars
 close all
 syms KvV KvG                           % Kv value of valve
-syms TauV TauG TauVA TauBP TauBC TauR TauTA TauIT  % Time constants
+syms TauV TauVA TauBP TauBC TauR TauTA TauIT  % Time constants
+syms TauFake                            % Fake time constant for derivative conversions
 syms R                                  % Hydraulic resistance
 syms Vc VR VIT                          % Volumes of cells, reseiver and piston
 syms eS                                 % Isentropic efficiency
@@ -17,9 +18,9 @@ syms cp                                 % Specific heat capacity of air
 syms TA1 TA2 T1 T2 TA0                  % Temperatures
 syms DQC DQF                            % Heat flow rates
 % Partial derivatives
-syms DdDp1 DdDp2 DdDpR                  % From pressure to density
-syms DdDh1 DdDh2 DdDhR                  % From enthalpy to density
-syms DTDp1 DTDp2                        % From pressure to temperature
+syms DpDd1 DpDd2 DpDdR                  % From density to pressure
+syms DpDh1 DpDh2 DpDhR                  % From enthalpy to pressure
+syms DTDd1 DTDd2                        % From density to temperature
 syms DTDh1 DTDh2                        % From enthalpy to temperature
 % Delta values
 syms delta_hpIT                         % Isentropic curve delta ratio
@@ -42,8 +43,8 @@ w = dA*DVA*cp/s;
 DQ1 = (TA2 - T1)*s;
 DQ2 = (TA1 - T2)*s;
 % Gas cooler, fluid side
-Joining1 = [-1 d1; DdDp1 DdDh1];
-Joining2 = [-1 d2; DdDp2 DdDh2];
+Joining1 = [-1 d1; 1 -DpDh1];
+Joining2 = [-1 d2; 1 -DpDh2];
 DmBP = DmV*BP;
 Dm1 = DmHR - DmBP;
 Dm2 = DmV*(1-BP);
@@ -53,7 +54,7 @@ DPsi2 = Dm21*h1-Dm2*h2 + DQ2;
 hBP = (Dm2*(h2-delta_h2) + DmBP*hHR)/DmV;
 % High pressure valve
 % Receiver
-JointR = [-1 dR; DdDpR DdDhR];
+JointR = [-1 dR; 1 -DpDhR];
 DPsiR = DmV*hBP - DmL*hL - DmG*hG;
 % Receiver Valve
 % Fan
@@ -65,10 +66,10 @@ DDmL = 1/TauBC*(-DmL + DmC + DmF);
 DDm21 = 1/TauR*(-Dm21 + 1/R*sqrt(d1*(p1-p2)));
 Dd1 = 1/Vc*(Dm1-Dm21); % unctrb integrator, any of density dampings reduces the number by one
 Dd2 = 1/Vc*(Dm21-DmV*(1-BP));
-Dph1 = Joining1\[DPsi1/Vc; Dd1]; % unobsv integrator
-Dph2 = Joining2\[DPsi2/Vc; Dd2]; % unctrb integrator
-DT1 = [DTDp1 DTDh1]*Dph1; % unctrb integrator
-DT2 = [DTDp2 DTDh2]*Dph2; % unctrb integrator
+Dph1 = 1/TauFake*(-[p1; h1]+Joining1\[DPsi1/Vc; DpDd1*Dd1]); % unobsv integrator
+Dph2 = 1/TauFake*(-[p2; h2]+Joining2\[DPsi2/Vc; DpDd2*Dd2]); % unctrb integrator
+DT1 = 1/TauFake*(-T1+[DTDd1 DTDh1]*[Dd1; Dph1(2)]); % unctrb integrator
+DT2 = 1/TauFake*(-T2+[DTDd2 DTDh2]*[Dd1; Dph2(2)]); % unctrb integrator
 DTA1 = 1/TauTA*(-TA1 + 1/(w+1)*T2 + 1/(1/w+1)*TA0);
 DTA2 = 1/TauTA*(-TA2 + 1/(w+1)*T1 + 1/(1/w+1)*TA1);
 % ByPass Valve
@@ -77,14 +78,14 @@ DBP = 1/TauBP*(-BP + BPR);
 DDmV = 1/TauV*(-DmV + CRV*KvV*sqrt(dBP*(p2 - pR)));
 % Receiver
 DdR = 1/VR*(DmV-DmL-DmG);
-DphR = JointR\[DPsiR/VR; DdR]; % unctrb integrator
+DphR = 1/TauFake*(-[pR; hR]+JointR\[DPsiR/VR; DpDdR*DdR]); % unctrb integrator
 % IT Compressor
 DDmG = 1/TauIT*(-DmG + dG*VIT*fIT);
 % Fan (A refers to air)
 DDVA = 1/TauVA*(-DVA + MxDVA*CRA);
 % Disturbances
-Ddelta_hJ = -eps*delta_hJ; % unobsv, unctrb integrator
-Ddelta_h2 = -eps*delta_h2; % unobsv, unctrb integrator
+Ddelta_hJ = 1/TauFake*(-delta_hJ); % unobsv, unctrb integrator
+Ddelta_h2 = 0; % unobsv, unctrb integrator
 % ------------------------- MEASUREMENTS ----------------------------------
 p2m = p2;
 T2m = T2;
@@ -101,7 +102,7 @@ u = [CRA; BPR; CRV; fIT];
 BC = [TA0; dA; delta_hHR; hMT; DQC; DQF];       % Decided in simulator, assumed to be known
 dDer = [dBP; dG; hG; hL; hC; hF; delta_hpIT];   % Derived from estimations / measurements
 dDis = [delta_hJ; delta_h2];                    % Unknown input to be estimated
-d = [BC; dDis];                                 % dDer is not considered, as it is changing slowly
+d = [BC; dDis];                                 % dDer is not considered, as it is changing slowly or slightly
 % Jacobians
 A = jacobian(Dx,x);
 B = jacobian(Dx,u);
@@ -115,118 +116,17 @@ EBC = jacobian(y,BC);
 EdDer = jacobian(y,dDer);
 EdDis = jacobian(y,dDis);
 Ed = jacobian(y,d);
-% Substitutions check the values
-A = subs(A,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
-Gd = subs(Gd,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
-B = subs(B,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
-C = subs(C,{p1 p2 pR},num2cell([86.5 85 38]*10^5));
-A = subs(A,{h1 h2 hL hG hR hMT hHR hC hF},num2cell([450 325 212 430 290 525 525 460 460]*10^3));
-Gd = subs(Gd,{h1 h2 hL hG hR hMT hHR hC hF},num2cell([450 325 212 430 290 525 525 460 460]*10^3));
-C = subs(C,{h1 h2 hL hG hR hMT hHR hC hF},num2cell([450 325 212 430 290 525 525 460 460]*10^3));
-A = subs(A,{delta_hHR delta_hJ delta_h2},num2cell([0 0 325-298]*10^3));
-C = subs(C,{delta_hHR delta_hJ delta_h2},num2cell([0 0 325-298]*10^3));
-A = subs(A,{d1 d2 dR dG dBP dA},...
-    num2cell([CoolProp.PropsSI('D','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('D','P',85e5,'H',325e3,'CO2') ...
-    CoolProp.PropsSI('D','P',38e5,'H',290e3,'CO2') ...
-    CoolProp.PropsSI('D','P',38e5,'H',430e3,'CO2') ...
-    CoolProp.PropsSI('D','P',85e5,'H',298e3,'CO2') ...
-    1.2]));
-B = subs(B,{d1 d2 dR dG dBP dA},...
-    num2cell([CoolProp.PropsSI('D','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('D','P',85e5,'H',325e3,'CO2') ...
-    CoolProp.PropsSI('D','P',38e5,'H',290e3,'CO2') ...
-    CoolProp.PropsSI('D','P',38e5,'H',430e3,'CO2') ...
-    CoolProp.PropsSI('D','P',85e5,'H',298e3,'CO2') ...
-    1.2]));
-Gd = subs(Gd,{d1 d2 dR dG dBP dA},...
-    num2cell([CoolProp.PropsSI('D','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('D','P',85e5,'H',325e3,'CO2') ...
-    CoolProp.PropsSI('D','P',38e5,'H',290e3,'CO2') ...
-    CoolProp.PropsSI('D','P',38e5,'H',430e3,'CO2') ...
-    CoolProp.PropsSI('D','P',85e5,'H',298e3,'CO2') ...
-    1.2]));
-A = subs(A,{TA2 TA1 T1 T2 TA0},...
-    num2cell([CoolProp.PropsSI('T','P',86.5e5,'H',450e3,'CO2')-20 ...
-    CoolProp.PropsSI('T','P',85e5,'H',325e3,'CO2')-3 ...
-    CoolProp.PropsSI('T','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('T','P',85e5,'H',325e3,'CO2') ...
-    30+273.15]));
-Gd = subs(Gd,{TA2 TA1 T1 T2 TA0},...
-    num2cell([CoolProp.PropsSI('T','P',86.5e5,'H',450e3,'CO2')-20 ...
-    CoolProp.PropsSI('T','P',85e5,'H',325e3,'CO2')-3 ...
-    CoolProp.PropsSI('T','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('T','P',85e5,'H',325e3,'CO2') ...
-    30+273.15]));
-A = subs(A,{DmV DmG DmL Dm21},num2cell([0.321 0.123 0.198 0.321]));
-Gd = subs(Gd,{DmV DmG DmL Dm21},num2cell([0.321 0.123 0.198 0.321]));
-C = subs(C,{DmV DmG DmL Dm21},num2cell([0.321 0.123 0.198 0.321]));
-A = subs(A,{DVA MxDVA},{3.33 6.66});
-B = subs(B,{DVA MxDVA},{3.33 6.66});
-Gd = subs(Gd,{DVA MxDVA},{3.33 6.66});
-A = subs(A,{BP CRV CRA fIT},num2cell([0 0.25 0.6 12]));
-Gd = subs(Gd,{BP CRV CRA fIT},num2cell([0 0.25 0.6 12]));
-C = subs(C,{BP CRV CRA fIT},num2cell([0 0.25 0.6 12]));
-A = subs(A,{DQC DQF},num2cell([36 11]*10^3));
-A = subs(A,{KvV KvG},num2cell([0.8 2]*8.7841e-06));
-Gd = subs(Gd,{KvV KvG},num2cell([0.8 2]*8.7841e-06));
-B = subs(B,{KvV KvG},num2cell([0.8 2]*8.7841e-06));
-A = subs(A,{TauV TauG TauVA TauBP TauBC TauR TauTA TauIT},num2cell([1 1 5 1 10 1 10 5]));
-B = subs(B,{TauV TauG TauVA TauBP TauBC TauR TauTA TauIT},num2cell([1 1 5 1 10 1 10 5]));
-Gd = subs(Gd,{TauV TauG TauVA TauBP TauBC TauR TauTA TauIT},num2cell([1 1 5 1 10 1 10 5]));
-A = subs(A,{R},num2cell(2.5*10^4));
-A = subs(A,{eS},num2cell(0.6));
-Gd = subs(Gd,{eS},num2cell(0.6));
-C = subs(C,{eS},num2cell(0.6));
-Gd = subs(Gd,{DQC DQF},num2cell([36 11]*1e3));
-A = subs(A,{s0 k cp},num2cell([5000/2 6000/2 1000]));
-Gd = subs(Gd,{s0 k cp},num2cell([5000/2 6000/2 1000]));
-A = subs(A,{Vc VR VIT},num2cell([19.2/2 133 0.1]*10^-3));
-B = subs(B,{Vc VR VIT},num2cell([19.2/2 133 0.1]*10^-3));
-Gd = subs(Gd,{Vc VR VIT},num2cell([19.2/2 133 0.1]*10^-3));
-A = subs(A,{DdDp1 DdDp2 DdDpR},num2cell([...
-    CoolProp.PropsSI('d(D)/d(P)|H','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(P)|H','P',85e5,'H',325e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(P)|H','P',38e5,'H',290e3,'CO2')]));
-Gd = subs(Gd,{DdDp1 DdDp2 DdDpR},num2cell([...
-    CoolProp.PropsSI('d(D)/d(P)|H','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(P)|H','P',85e5,'H',325e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(P)|H','P',38e5,'H',290e3,'CO2')]));
-A = subs(A,{DdDh1 DdDh2 DdDhR},num2cell([...
-    CoolProp.PropsSI('d(D)/d(H)|P','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(H)|P','P',85e5,'H',325e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(H)|P','P',38e5,'H',290e3,'CO2')]));
-Gd = subs(Gd,{DdDh1 DdDh2 DdDhR},num2cell([...
-    CoolProp.PropsSI('d(D)/d(H)|P','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(H)|P','P',85e5,'H',325e3,'CO2') ...
-    CoolProp.PropsSI('d(D)/d(H)|P','P',38e5,'H',290e3,'CO2')]));
-A = subs(A,{DTDp1 DTDp2},num2cell([...
-    CoolProp.PropsSI('d(T)/d(P)|H','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(T)/d(P)|H','P',85e5,'H',325e3,'CO2')]));
-Gd = subs(Gd,{DTDp1 DTDp2},num2cell([...
-    CoolProp.PropsSI('d(T)/d(P)|H','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(T)/d(P)|H','P',85e5,'H',325e3,'CO2')]));
-A = subs(A,{DTDh1 DTDh2},num2cell([...
-    CoolProp.PropsSI('d(T)/d(H)|P','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(T)/d(H)|P','P',85e5,'H',325e3,'CO2')]));
-Gd = subs(Gd,{DTDh1 DTDh2},num2cell([...
-    CoolProp.PropsSI('d(T)/d(H)|P','P',86.5e5,'H',450e3,'CO2') ...
-    CoolProp.PropsSI('d(T)/d(H)|P','P',85e5,'H',325e3,'CO2')]));
-A = subs(A,{delta_hpIT},num2cell(...
-    (CoolProp.PropsSI('H','P',86.5e5,'S',...
-    CoolProp.PropsSI('S','P',38e5,'H',430e3,'CO2'),'CO2')-430e3)/...
-    (86.5e5-38e5)));
-C = subs(C,{delta_hpIT},num2cell(...
-    (CoolProp.PropsSI('H','P',86.5e5,'S',...
-    CoolProp.PropsSI('S','P',38e5,'H',430e3,'CO2'),'CO2')-430e3)/...
-    (86.5e5-38e5)));
-A = double(A);
-B = double(B);
-Gd = double(Gd);
-C = double(C);
-% ----------------------- POSTPROCESSING ----------------------------------
+% ------------------------ SUBSTITUTIONS ----------------------------------
+mx4sub = struct('A',A,'B',B,'C',C,'Gd',Gd);
+fields = fieldnames(mx4sub);
+substitution;
+A = double(mx4sub.A);
+B = double(mx4sub.B);
+Gd = double(mx4sub.Gd);
+C = double(mx4sub.C);
+% ------------------------- NORMALIZING -----------------------------------
 % Normalizing with maximum required deviations
-% x = [DVA; p1; h1; d1; T1; TA2; Dm21; p2; h2; d2; T2; TA1; BP; DmV; pR; hR; dR; DmG; DmL];
+% x = [DVA; p1; h1; d1; T1; TA2; Dm21; p2; h2; d2; T2; TA1; BP; DmV; pR; hR; dR; DmG; DmL; delta_hJ; delta_h2];
 condA = cond(A)
 disp('The condition of the matrix indicates the relative sensitivies within the system')
 DVBound = 1;
