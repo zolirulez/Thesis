@@ -1,11 +1,14 @@
+FMIKit.initialize
+addpath('C:\Users\u375749\Documents\Thesis\Codes\Linearization')
+addpath('C:\Users\u375749\Documents\Thesis\Codes\MatlabPlant')
 Ts = 1;
 initialIntegration = 0;
 negation = -1;
 minOutput = 0;
 maxOutput = 1;
-PI_HK = PIController;
+PI_HP = PIController;
 Ti = 50;
-K = 1e-5;
+K = 1e-6;
 initialIntegration = 0.25;
 PI_HP.initialize(K,Ti,initialIntegration,minOutput,maxOutput,negation,Ts)
 %  K_Controllers.K_PI k_PI_HighPressure(
