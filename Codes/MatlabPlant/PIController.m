@@ -13,14 +13,11 @@ classdef PIController < matlab.mixin.Copyable
       function out = react(ctrl,ref,meas)
           ctrl.err = ctrl.neg*(ref - meas);
           ctrl.int = ctrl.err*ctrl.Ts + ctrl.int;
-          out = min(max(ctrl.P*ctrl.err + ctrl.I*ctrl.int,ctrl.mn),ctrl.mx);
-      end
-      function out = react_simulink(ctrl,u)
-          ref = u(1);
-          meas = u(2);
-          ctrl.err = ctrl.neg*(ref - meas);
-          ctrl.int = ctrl.err*ctrl.Ts + ctrl.int;
-          out = min(max(ctrl.P*ctrl.err + ctrl.I*ctrl.int,ctrl.mn),ctrl.mx);
+          out = ctrl.P*ctrl.err + ctrl.I*ctrl.int;
+          if out < ctrl.mn || out > ctrl.mx
+              ctrl.int = ctrl.int - ctrl.err*ctrl.Ts;
+          end
+          out = min(max(out,ctrl.mn),ctrl.mx);
       end
       function initialize(ctrl,K,Ti,initialIntegration,minOutput,maxOutput,negation,Ts)
           ctrl.Ts = Ts;
