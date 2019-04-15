@@ -1,6 +1,3 @@
-FMIKit.initialize
-addpath('C:\Users\u375749\Documents\Thesis\Codes\Linearization')
-addpath('C:\Users\u375749\Documents\Thesis\Codes\MatlabPlant')
 Ts = 1;
 negation = -1;
 minOutput = 0;

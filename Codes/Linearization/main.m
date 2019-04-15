@@ -2,14 +2,13 @@
 clearvars
 close all
 
-%% Model creation, nonlinear model
+%% Model creation, nonlinear model, linear model
 % modelcreation
 modelcreation_simplified
-%% Linearization, substitution and normalization
-linearization
+%% Substitution and normalization
 % substitution
 substitution_simplified
-normalization
+% normalization
 %% Modal, controllability, observability analysis with plots
 analysis
 %% Creation of Kalman filter, which saves the filter into kf.mat and produces a transient plot

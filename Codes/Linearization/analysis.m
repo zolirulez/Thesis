@@ -13,9 +13,8 @@ Wt = W';
 norm(Wt\E*Wt-A,Inf)
 disp('The smaller this norm, the more reliable the modal matrix is')
 % Separating real and imaginary values
-Wt = real([Wt(1,:); real(Wt(2,:)); imag(Wt(2,:));...
-    Wt(4:8,:); real(Wt(9,:)); imag(Wt(9,:));...
-    Wt(11,:); real(Wt(12,:)); imag(Wt(12,:)); Wt(14:end,:)]);
+Wt = real([Wt(1:6,:); real(Wt(7,:)); imag(Wt(7,:));...
+    Wt(9,:); real(Wt(10,:)); imag(Wt(10,:)); Wt(12:end,:)]);
 realexpeigA = sign(real(E)).*exp(abs(real(E)));
 realexpeigA(real(E)==0) = 0;
 imagexpeigA = sign(imag(E)).*exp(abs(imag(E)));
@@ -25,7 +24,7 @@ imagexpeigA(imag(E)==0) = 0;
 % norm(AC-TC*A/TC,Inf)
 % disp('The smaller this norm, the more reliable the controllability staircase form is')
 rankCTRB = sum(KC)
-disp(['The system is not fully controllable, there are ' num2str(length(AC)-rankCTRB)...
+disp(['If the system is not fully controllable, there are ' num2str(length(AC)-rankCTRB)...
     ' poles in the uncontrollable subspace'])
 EnC = round(real(eig(AC(1:(length(AC)-rankCTRB),1:(length(AC)-rankCTRB)))),10);
 disp(['There are ' num2str(sum(EnC==0))...
@@ -33,13 +32,13 @@ disp(['There are ' num2str(sum(EnC==0))...
     ' a stable pole'])
 expAC = sign(AC).*exp(abs(AC));
 expAC(round(AC,10)==0) = 0;
-GdC = TC*Gd;
+GC = TC*G;
 % ------------------------ OBSERVABILITY ----------------------------------
 [AO,BO,CO,TO,KO] = obsvf(A,B,C,1e-10);
 % norm(AO-TO*A/TO,Inf)
 % disp('The smaller this norm, the more reliable the observability staircase form is')
 rankOBSV = sum(KO)
-disp(['The system is not fully observable, there are ' num2str(length(AO)-rankOBSV)...
+disp(['If the system is not fully observable, there are ' num2str(length(AO)-rankOBSV)...
     ' poles in the unobservable subspace'])
 EnO = round(real(eig(AO(1:(length(AO)-rankOBSV),1:(length(AO)-rankOBSV)))),10);
 disp(['There are ' num2str(sum(EnO==0))...
@@ -47,7 +46,7 @@ disp(['There are ' num2str(sum(EnO==0))...
     ' a stable pole'])
 expAO = sign(AO).*exp(abs(AO));
 expAO(round(AO,10)==0) = 0;
-GdO = TO*Gd;
+GO = TO*G;
 % -------------------------- PLOTTING -------------------------------------
 % System matrix
 figure(1)
@@ -104,7 +103,7 @@ xlabel(char(u))
 ylabel('z')
 title('BC')
 subplot(244)
-imagesc(GdC,[-10^-5 10^-5])
+imagesc(GC,[-10^-5 10^-5])
 colormap('jet')
 colorbar
 xlabel(char(d))
@@ -134,7 +133,7 @@ xlabel(char(u))
 ylabel('z')
 title('BO')
 subplot(244)
-imagesc(GdO,[-10^-5 10^-5])
+imagesc(GO,[-10^-5 10^-5])
 colormap('jet')
 colorbar
 xlabel(char(d))

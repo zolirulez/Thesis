@@ -100,3 +100,13 @@ BC = [TA0; dA; delta_hHR; hMT; DQC; DQF];       % Decided in simulator, assumed 
 dDer = [dBP; dG; hG; hL; hC; hF; delta_hpIT];   % Derived from estimations / measurements
 dDis = [delta_hJ; delta_h2];                    % Unknown input to be estimated
 d = [BC; dDer; dDis];
+% ------------------------ LINEARIZATION ----------------------------------                              
+% Jacobians
+A = jacobian(Dx,x);
+B = jacobian(Dx,u);
+G = jacobian(Dx,d);
+C = jacobian(y,x);
+D = jacobian(y,u);
+E = jacobian(y,d);
+mx4sub = struct('A',A,'B',B,'C',C,'G',G);
+fields = fieldnames(mx4sub);

@@ -14,24 +14,5 @@ initial.x = zeros(nx,1);
 initial.P = 0.1*eye(nx);
 kfType = 'timeinvariant';
 kf = KalmanFilter;
-horizon = 10;
+horizon = 1;
 kf.initialize(system,noise,initial,kfType,horizon)
-j = horizon;
-u = zeros(nu,j);
-Lr = chol(noise.R);
-y = kf.C*initial.x + Lr*randn(ny,1);
-Q = cell(j,1);
-for it = 1:j
-    Q{it} = noise.Q;
-end
-[xf, x1, xj, z] = kf.outputPredictor(u,y,Q,j);
-[xf, x1, z] = kf.markovPredictor(u,y);
-disp('One step prediction for state:')
-x1
-z = reshape(z,nz,j);
-% Plotting
-figure(5)
-plot(z')
-disp('Final value should be for all-step inputs:')
-kf.Cz*((eye(nx)-kf.A)\kf.B)
-save('kalmanFilter','kf')
