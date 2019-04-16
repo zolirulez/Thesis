@@ -101,9 +101,17 @@ nx = length(x);
 nu = length(u);
 ny = length(y);
 % Noises
-noise.R = 0.02*eye(ny);
-% noise.R(2,3) = -0.01; noise.R(3,2) = -0.01; noise.R(2,4) = 0.01; noise.R(4,2) = 0.01;
-noise.Q = 0.01*eye(nx);
+DVBound = 1;
+pBound = 5*10^5;
+hBound = 20*10^3;
+BPBound = 0.1;
+dBound = 10;
+TBound = 5;
+DmBound = 0.1;
+noise.R = diag([pBound; TBound; hBound; pBound; hBound; hBound; hBound]);
+noise.Q = diag([DVBound; pBound; hBound; dBound; TBound; DmBound; pBound;...
+    hBound; dBound; TBound; BPBound; DmBound; pBound; hBound; dBound;...
+    DmBound; DmBound; hBound; hBound; hBound; TBound; DmBound]);
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians
