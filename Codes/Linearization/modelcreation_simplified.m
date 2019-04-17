@@ -21,17 +21,18 @@ syms delta_Th1 delta_Th2                % From enthalpy to temperature
 syms delta_Td1 delta_Td2                % From density to temperature
 % Delta values
 syms delta_hpIT                         % Isentropic curve delta ratio
-syms delta_hHR delta_h2 delta_hJ        % Enthalpy drops
+syms delta_hHR delta_h2                 % Enthalpy drops
 % ----------------------- STATIC EQUATIONS --------------------------------
 % Boundary condition
-DmMT = DmL;
+DmL = DmQ;
+DmMT = DmQ;
 % Compressor
 hIT = hG + delta_hpIT*(p1 - pR)/eS;
 % Joint
 DmHR = DmMT + DmG;
 hJ = (hMT*DmMT+hIT*DmG)/DmHR;
 % Heat recovery
-hHR = hJ - delta_hHR + delta_hJ;
+hHR = hJ - delta_hHR;
 % Gas cooler, heat transfer
 s = s0 + k*DVA;
 w = dA*DVA*cp/s;
@@ -50,17 +51,15 @@ hBP = (Dm2*(h2-delta_h2) + DmBP*hHR)/DmV;
 % Receiver Valve
 % Fan
 % ---------------------- DYNAMIC EQUATIONS --------------------------------
-% Boundary condition
-DDmL = 1/TauQ*(-DmL + DmQ);
 % Heat Recovery (no differentials)
 % Gas cooler
 DDm21 = 1/TauR*(-Dm21 + 1/R*sqrt(d1*(p1-p2)));
 Dd1 = 1/Vc*(Dm1-Dm21);
-Dd2 = 1/Vc*(Dm21-DmV*(1-BP));
+Dd2 = 1/Vc*(Dm21-Dm2);
 Dp1 = 1/Taup*(-p1+delta_ph1*h1+delta_pd1*d1);
 Dp2 = 1/Taup*(-p2+delta_ph2*h2+delta_pd2*d2);
-Dh1 = 1/Vc*(Dm1*hHR-Dm21*h1 + DQ1);
-Dh2 = 1/Vc*(Dm21*h1-Dm2*h2 + DQ2);
+Dh1 = 1/(d1*Vc)*(Dm1*hHR-Dm21*h1 + DQ1);
+Dh2 = 1/(d2*Vc)*(Dm21*h1-Dm2*h2 + DQ2);
 DTA1 = 1/TauTA*(-TA1 + 1/(w+1)*T2 + 1/(1/w+1)*TA0);
 DTA2 = 1/TauTA*(-TA2 + 1/(w+1)*T1 + 1/(1/w+1)*TA1);
 % ByPass Valve
@@ -70,7 +69,7 @@ DDmV = 1/TauV*(-DmV + CRV*KvV*sqrt(dBP*(p2 - pR)));
 % Receiver
 DdR = 1/VR*(DmV-DmL-DmG);
 DpR = 1/Taup*(-pR+delta_phR*hR+delta_pdR*dR);
-DhR = 1/VR*(DmV*hBP - DmL*hL - DmG*hG);
+DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG);
 % IT Compressor
 DDmG = 1/TauIT*(-DmG + dG*VIT*CRIT*MxfIT);
 % Fan (A refers to air)
@@ -78,8 +77,7 @@ DDVA = 1/TauVA*(-DVA + MxDVA*CRA);
 % Disturbances
 Ddelta_h2 = 0;
 DDmQ = 0;
-DhMT = 1/TauQ*(-hMT + hMTd);
-DhMTd = 0;
+DhMT = 0;
 DTA0 = 0;
 % ------------------------- MEASUREMENTS ----------------------------------
 p2m = p2;
@@ -91,27 +89,27 @@ hRm = hR;
 hMTm = hMT;
 hHRm = hHR;
 % ------------------------- AUGMENTATION ----------------------------------
-Dx = [DDVA; Dp1; Dh1; Dd1; DTA2; DDm21; Dp2; Dh2; Dd2; DTA1; DBP; DDmV; DpR; DhR; DdR; DDmG; DDmL; Ddelta_h2; DhMT; DhMTd; DTA0; DDmQ];
-x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; DmL; delta_h2; hMT; hMTd; TA0; DmQ];
+Dx = [DDVA; Dp1; Dh1; Dd1; DTA2; DDm21; Dp2; Dh2; Dd2; DTA1; DBP; DDmV; DpR; DhR; DdR; DDmG; Ddelta_h2; DhMT; DTA0; DDmQ];
+x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; hMT; TA0; DmQ];
 y = [p2m; TA0m; hBPm; pRm; hRm; hMTm; hHRm]; % T2m is missing now
 u = [CRA; BPR; CRV; CRIT; dA; delta_hHR; dBP; dG; hG; hL; delta_hpIT];
-d = [delta_hJ; delta_h2; hMT; TA0; DmQ]; % Unknown input to be estimated
+d = [delta_h2; hMT; TA0; DmQ]; % Unknown input to be estimated
 % Dimensions
 nx = length(x);
 nu = length(u);
 ny = length(y);
 % Noises
-DVBound = 1;
+DVBound = 0.05;
 pBound = 5*10^5;
 hBound = 20*10^3;
-BPBound = 0.1;
+BPBound = 0.001;
 dBound = 10;
 TBound = 5;
-DmBound = 0.1;
+DmBound = 0.005;
 noise.R = diag([pBound; TBound; hBound; pBound; hBound; hBound; hBound]);
 noise.Q = diag([DVBound; pBound; hBound; dBound; TBound; DmBound; pBound;...
     hBound; dBound; TBound; BPBound; DmBound; pBound; hBound; dBound;...
-    DmBound; DmBound; hBound; hBound; hBound; TBound; DmBound]);
+    DmBound; hBound; hBound; TBound; DmBound]); % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians
