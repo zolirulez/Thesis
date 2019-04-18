@@ -77,39 +77,37 @@ DDVA = 1/TauVA*(-DVA + MxDVA*CRA);
 % Disturbances
 Ddelta_h2 = 0;
 DDmQ = 0;
-DhMT = 0;
-DTA0 = 0;
 % ------------------------- MEASUREMENTS ----------------------------------
 p2m = p2;
 TA0m = TA0;
-% T2m = delta_Th2*h2+delta_Td2*d2; % It is actually calculated from two other measurements
 hBPm = hBP;
 pRm = pR;
 hRm = hR;
-hMTm = hMT;
 hHRm = hHR;
+TA1m = TA1;
+DmQm = DmQ;
 % ------------------------- AUGMENTATION ----------------------------------
-Dx = [DDVA; Dp1; Dh1; Dd1; DTA2; DDm21; Dp2; Dh2; Dd2; DTA1; DBP; DDmV; DpR; DhR; DdR; DDmG; Ddelta_h2; DhMT; DTA0; DDmQ];
-x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; hMT; TA0; DmQ];
-y = [p2m; TA0m; hBPm; pRm; hRm; hMTm; hHRm]; % T2m is missing now
-u = [CRA; BPR; CRV; CRIT; dA; delta_hHR; dBP; dG; hG; hL; delta_hpIT];
-d = [delta_h2; hMT; TA0; DmQ]; % Unknown input to be estimated
+Dx = [DDVA; Dp1; Dh1; Dd1; DTA2; DDm21; Dp2; Dh2; Dd2; DTA1; DBP; DDmV; DpR; DhR; DdR; DDmG; Ddelta_h2; DDmQ];
+x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; DmQ];
+y = [p2m; hBPm; pRm; hRm; hHRm; TA1m; DmQm]; 
+u = [CRA; BPR; CRV; CRIT; dA; delta_hHR; dBP; dG; hG; hL; delta_hpIT; TA0; hMT];
+d = [delta_h2; DmQ]; % Unknown input to be estimated
 % Dimensions
 nx = length(x);
 nu = length(u);
 ny = length(y);
 % Noises
-DVBound = 0.05;
+DVBound = 0.005*0;
 pBound = 5*10^5;
 hBound = 20*10^3;
-BPBound = 0.001;
+BPBound = 0.0001*0;
 dBound = 10;
 TBound = 5;
-DmBound = 0.005;
-noise.R = diag([pBound; TBound; hBound; pBound; hBound; hBound; hBound]);
+DmBound = 0.0005;
+noise.R = diag([pBound; hBound; pBound; hBound; hBound; TBound; DmBound]);
 noise.Q = diag([DVBound; pBound; hBound; dBound; TBound; DmBound; pBound;...
     hBound; dBound; TBound; BPBound; DmBound; pBound; hBound; dBound;...
-    DmBound; hBound; hBound; TBound; DmBound]); % TODO
+    DmBound; hBound; DmBound])*10; % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians
