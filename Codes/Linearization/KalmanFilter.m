@@ -31,6 +31,7 @@ classdef KalmanFilter < handle
         G    % Noise input matrix
         B    % Input matrix
         C    % Measurement matrix
+        D    % Feedforward matrix
         Cz   % Output matrix
         obs  % Extended observability matrix
         obsn % Noise propagation matrix
@@ -42,7 +43,7 @@ classdef KalmanFilter < handle
         j    % Length of horizon
     end
     methods
-        function measurementUpdate(kf,y)
+        function measurementUpdate(kf,u,y)
             % Innovation covariance
             Re = kf.C*kf.P1*kf.C' + kf.R;
             % Kalman filter
@@ -51,7 +52,7 @@ classdef KalmanFilter < handle
                 kf.Kw = kf.S/Re;
             end
             % Signals
-            e = y - kf.C*kf.x1;
+            e = y - (kf.C*kf.x1 + kf.D*u(:,1));
             kf.xf = kf.x1 + kf.Kx*e;
             kf.wf = kf.Kw*e;
             % Covariances
@@ -89,9 +90,9 @@ classdef KalmanFilter < handle
                 kf.Rz{it} = kf.Cz*kf.Pj{it}*kf.Cz';
             end
         end
-        function measurementPrediction(kf)
+        function measurementPrediction(kf,u)
             % Signals
-            kf.y = kf.C*kf.xf;
+            kf.y = kf.C*kf.xf + kf.D*u(:,1);
             % Covariances
             kf.Ry = kf.C*kf.Pf*kf.C' + kf.R;
         end
@@ -101,7 +102,7 @@ classdef KalmanFilter < handle
             kf.z = kf.obs*kf.xf + kf.obsn*kf.wf + kf.markov*u;
         end
         function [xf, x1, xj, z] = outputPredictor(kf,u,y,Q,j)
-            kf.measurementUpdate(y);
+            kf.measurementUpdate(u,y);
             if strcmp(kf.kalmanFilterType,'timevariant')
                 kf.timeVariation(kf,t);
             end
@@ -114,7 +115,7 @@ classdef KalmanFilter < handle
             z = kf.z;
         end
         function [xf, x1, z] = markovPredictor(kf,u,y)
-            kf.measurementUpdate(y);
+            kf.measurementUpdate(u,y);
             kf.timeUpdate(u);
             kf.markovPrediction(u);
             xf = kf.xf;
@@ -128,6 +129,7 @@ classdef KalmanFilter < handle
             kf.A = 0;
             kf.B = 0;
             kf.C = 0;
+            kf.D = 0;
             kf.Cz = 0;
             kf.R = 0;
             kf.Q = 0;
@@ -138,6 +140,7 @@ classdef KalmanFilter < handle
             kf.A = system.A;
             kf.B = system.B;
             kf.C = system.C;
+            kf.D = system.D;
             kf.Cz = system.Cz;
             kf.G = system.G;
             kf.R = noise.R;

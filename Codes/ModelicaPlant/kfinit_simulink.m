@@ -5,6 +5,7 @@ systemDisc = c2d(systemCont,Ts);
 system.A = systemDisc.A;
 system.B = systemDisc.B;
 system.C = systemDisc.C;
+system.D = systemDisc.D;
 % x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; hMT; TA0; DmQ];
 Cz = zeros(nz,nx);
 Cz(1,8) = 1; Cz(2,9) = 1; Cz(3,15) = 1; Cz(4,16) = 1;
@@ -16,8 +17,7 @@ initial.xs = [DVValues(1); pValues(1); hValues(1); dValues(1); TA2Values; DmValu
     delta_hValues(2); DmValues(5)];
 initial.x = zeros(nx,1);
 initial.us = [CRValues(3); CRValues(1); CRValues(2); CRValues(4); dValues(6);...
-    delta_hValues(1); dValues(5); dValues(4); hValues(4); hValues(3); ...
-    delta_hpValues(1); TA0Values; hValues(6)];
+    delta_hValues(1); dValues(5); dValues(4); hValues(4); hValues(3); TA0Values; hValues(6)];
 initial.P = 0.1*eye(nx);
 kfType = 'timeinvariant';
 kf = KalmanFilter;

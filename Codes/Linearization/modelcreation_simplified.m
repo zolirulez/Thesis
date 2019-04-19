@@ -90,7 +90,7 @@ DmQm = DmQ;
 Dx = [DDVA; Dp1; Dh1; Dd1; DTA2; DDm21; Dp2; Dh2; Dd2; DTA1; DBP; DDmV; DpR; DhR; DdR; DDmG; Ddelta_h2; DDmQ];
 x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; DmQ];
 y = [p2m; hBPm; pRm; hRm; hHRm; TA1m; DmQm]; 
-u = [CRA; BPR; CRV; CRIT; dA; delta_hHR; dBP; dG; hG; hL; delta_hpIT; TA0; hMT];
+u = [CRA; BPR; CRV; CRIT; dA; delta_hHR; dBP; dG; hG; hL; TA0; hMT];
 d = [delta_h2; DmQ]; % Unknown input to be estimated
 % Dimensions
 nx = length(x);
