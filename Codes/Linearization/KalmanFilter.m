@@ -5,7 +5,7 @@ classdef KalmanFilter < handle
     %   different instances are needed (e.g. different predictor and
     %   filter.
     properties
-        % Types: stationary, timevariant, timeinvariant
+        % Types: stationary, timevarying, timeinvariant
         kalmanFilterType
         % Signals
         x1   % Prediction for one time step
@@ -101,11 +101,14 @@ classdef KalmanFilter < handle
             % Signal
             kf.z = kf.obs*kf.xf + kf.obsn*kf.wf + kf.markov*u;
         end
-        function [xf, x1, xj, z] = outputPredictor(kf,u,y,Q,j)
-            kf.measurementUpdate(u,y);
-            if strcmp(kf.kalmanFilterType,'timevariant')
-                kf.timeVariation(kf,t);
+        function [xf, x1, xj, z] = outputPredictor(kf,u,y,Q,j,A,B,C,D)
+            if strcmp(kf.kalmanFilterType,'timevarying')
+                if nargin < 6
+                    error('Time varying system matrices are not provided')
+                end
+                kf.timeVariation(A,B,C,D);
             end
+            kf.measurementUpdate(u,y);
             kf.timeUpdate(u);
             kf.statePrediction(u,Q,j);
             kf.outputPrediction(j);
@@ -114,7 +117,14 @@ classdef KalmanFilter < handle
             xj = kf.xj;
             z = kf.z;
         end
-        function [xf, x1, z] = markovPredictor(kf,u,y)
+        function [xf, x1, z] = markovPredictor(kf,u,y,A,B,C,D)
+            if strcmp(kf.kalmanFilterType,'timevarying')
+                if nargin < 6
+                    error('Time varying system matrices are not provided')
+                end
+                kf.markovInitialization;
+                kf.timeVariation(A,B,C,D);
+            end
             kf.measurementUpdate(u,y);
             kf.timeUpdate(u);
             kf.markovPrediction(u);
@@ -122,18 +132,18 @@ classdef KalmanFilter < handle
             x1 = kf.x1;
             z = kf.z;
         end
-        function timeVariation(kf,t)
+        function timeVariation(kf,A,B,C,D)
             % Function for the case of changing system matrices. The
             %     methodology is not clarified yet.
             
-            kf.A = 0;
-            kf.B = 0;
-            kf.C = 0;
-            kf.D = 0;
-            kf.Cz = 0;
-            kf.R = 0;
-            kf.Q = 0;
-            kf.S = 0;
+            kf.A = A;
+            kf.B = B;
+            kf.C = C;
+            kf.D = D;
+            %             kf.Cz = 0;
+            %             kf.R = 0;
+            %             kf.Q = 0;
+            %             kf.S = 0;
         end
         function initialize(kf,system,noise,initial,kalmanFilterType,horizon)
             kf.kalmanFilterType = kalmanFilterType;

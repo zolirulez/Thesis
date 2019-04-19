@@ -19,7 +19,11 @@ initial.x = zeros(nx,1);
 initial.us = [CRValues(3); CRValues(1); CRValues(2); CRValues(4); dValues(6);...
     delta_hValues(1); dValues(5); dValues(4); hValues(4); hValues(3); TA0Values; hValues(6)];
 initial.P = 0.1*eye(nx);
-kfType = 'timeinvariant';
+kfType = 'timevarying';
+global kf
 kf = KalmanFilter;
 horizon = 1;
 kf.initialize(system,noise,initial,kfType,horizon)
+% Simulink Bus object
+% systemBus = Simulink.Bus.createObject(system)
+% kfBus = Simulink.Bus.createObject(kf)
