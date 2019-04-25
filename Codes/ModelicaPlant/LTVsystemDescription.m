@@ -10,9 +10,9 @@ system = struct('A',A,'B',B,'C',C,'D',D);
 fields = fieldnames(system);
 
 % Input values
-BPRValue = u(1);
-CRVValue = u(2);
-CRAValue = u(3);
+CRAValue = u(1);
+BPRValue = u(2);
+CRVValue = u(3);
 CRITValue = u(4);
 delta_hHRValue = u(5);
 dBPValue = u(6);
@@ -41,12 +41,6 @@ dRValue = x(15);
 DmGValue = x(16);
 delta_h2Value = x(17);
 DmQValue = x(18);
-
-% Derived values
-delta_hpITValue = ... % delta_hpIT
-    (CoolProp.PropsSI('H','P',p1Value,'S',...
-    CoolProp.PropsSI('S','P',pRValue,'H',hGValue,'CO2'),'CO2')-hGValue)/...
-    (p1Value-pRValue);
 
 % Substitutions
 subsarray = [];

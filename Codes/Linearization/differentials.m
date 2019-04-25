@@ -1,7 +1,7 @@
 %% This program plots a surface of partial differentials for a ph range
 
 clearvars
-close all
+% close all
 P = linspace(30,100,100)*1e5;
 H = linspace(200,525,100)*1e3;
 Diff = NaN(100);
@@ -12,3 +12,6 @@ for p = 1:length(P)
     end
 end
 surf(H,P,Diff)
+xlabel('h')
+ylabel('p')
+title('D(P)/D(H)|D')
