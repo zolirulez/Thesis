@@ -2,7 +2,7 @@ syms KvV KvG                           % Kv value of valve
 syms TauV TauVA TauBP TauQ TauR TauTA TauIT Taup  % Time constants
 syms TauFake                            % Fake time constant for derivative conversions
 syms R                                  % Hydraulic resistance
-syms Vc VR VIT                          % Volumes of cells, reseiver and piston
+syms Vc VR VG                          % Volumes of cells, reseiver and piston
 syms eS                                 % Isentropic efficiency
 syms p1 p2 pR                           % Pressures
 syms h1 h2 hL hG hR hMT hMTd hHR        % Enthalpies
@@ -71,7 +71,7 @@ DdR = 1/VR*(DmV-DmL-DmG);
 DpR = 1/Taup*(-pR+delta_phR*hR+delta_pdR*dR);
 DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG);
 % IT Compressor
-DDmG = 1/TauIT*(-DmG + dG*VIT*CRIT*MxfIT);
+DDmG = 1/TauIT*(-DmG + dG*VG*CRIT*MxfIT);
 % Fan (A refers to air)
 DDVA = 1/TauVA*(-DVA + MxDVA*CRA);
 % Disturbances
@@ -79,7 +79,6 @@ Ddelta_h2 = 0;
 DDmQ = 0;
 % ------------------------- MEASUREMENTS ----------------------------------
 p2m = p2;
-TA0m = TA0;
 hBPm = hBP;
 pRm = pR;
 hRm = hR;

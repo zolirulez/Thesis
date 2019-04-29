@@ -1,55 +1,102 @@
 function [A,B,C,D] = constantsave(A,B,C,D)
 
-symvars = symvar([A B; C D]);
-symvarsstr = ['[', strjoin(arrayfun(@char, symvars, 'uniform', 0),', '), ']'];
-endindex = find(any([symvarsstr == ','; symvarsstr == ']']));
-startindex = find(any([symvarsstr == '['; symvarsstr == ' ']));
-value = cell(length(symvars),1);
-for it = 1:length(symvars)
-    value{it} = [symvarsstr(startindex(it)+1:endindex(it)-1) 'Value'];
-end
+initx =  1e6*  [0.000003330000000 ...
+   8.650000000000000 ...
+   0.450000000000000 ...
+   0.000216924824105 ...
+   0.000327168268882 ...
+   0.000000321000000 ...
+   8.500000000000000 ...
+   0.300902744651202 ...
+   0.000644701768706 ...
+   0.000306180450079 ...
+                   0 ...
+   0.000000321000000 ...
+   3.800000000000000 ...
+   0.280000000000000 ...
+   0.000267120303198 ...
+   0.000000123000000 ...
+   0.002902744651202 ...
+   0.000000198000000];
+
+initu = 1e5* [   0.000002500000000 ...
+                   0 ...
+   0.000002500000000 ...
+   0.000004500000000 ...
+                   0 ...
+   0.006563589562845 ... 
+   0.001085190442915 ...
+   4.287576580458659 ...
+   2.081919636944517 ...
+   0.003031500000000 ...
+   5.250000000000000];
+
+% Dimensions
+nx = length(A);
+nu = size(B,2);
+ny = size(C,1);
+
+ABCD = [A B; C D];
 
 % Table required
-delta_ph1Value = 13;
-delta_ph2Value = 17;
-delta_phRValue = 8;
-delta_pd1Value = 1.25*1e4;
-delta_pd2Value = 0.46*1e4;
-delta_pdRValue = 0.50*1e4;
-delta_Th1Value = 6.6*1e-4;
-delta_Th2Value = 7.0*1e-4;
-delta_Td1Value = 0.16;
-delta_Td2Value = 0.15;
+c.delta_ph1Value = 13;
+c.delta_ph2Value = 17;
+c.delta_phRValue = 8;
+c.delta_pd1Value = 1.25*1e4;
+c.delta_pd2Value = 0.46*1e4;
+c.delta_pdRValue = 0.50*1e4;
+c.delta_Th1Value = 6.6*1e-4;
+c.delta_Th2Value = 7.0*1e-4;
+c.delta_Td1Value = 0.16;
+c.delta_Td2Value = 0.15;
 
 % Constants
-eSValue = 0.6; % eS
-MxfITValue = 48; % MxfIT
-KvVValue = 0.8*3e-5;% 8.7841e-06;% KvV KvG
-KvGValue = 2*3e-5;
-TauVValue = 1;
-TauVAValue = 5;
-TauBPValue = 1;
-TauQValue = 10;
-TauRValue = 1;
-TauTAValue = 1;
-TauITValue = 5;
-TaupValue = 0.1;
-RValue = 1.77e4; % R
-VcValue = 19.2/2*1e-3;
-VRValue = 133*1e-3;
-VITValue = 0.05*1e-3;
-s0Value = 5000/2;
-kValue = 6000/2;
-cpValue = 1000;
-dAValue = 1.2;
-MxDVAValue = 6.66;
+c.eSValue = 0.6; % eS
+c.MxfITValue = 48; % MxfIT
+c.KvVValue = 0.8*3e-5;% 8.7841e-06;% KvV KvG
+c.KvGValue = 2*3e-5;
+c.TauVValue = 1;
+c.TauVAValue = 5;
+c.TauBPValue = 1;
+c.TauQValue = 10;
+c.TauRValue = 1;
+c.TauTAValue = 1;
+c.TauITValue = 5;
+c.TaupValue = 0.1;
+c.RValue = 1.77e4; % R
+c.VcValue = 19.2/2*1e-3;
+c.VRValue = 133*1e-3;
+c.VGValue = 0.05*1e-3;
+c.s0Value = 5000/2;
+c.kValue = 6000/2;
+c.cpValue = 1000;
+c.dAValue = 1.2;
+c.MxDVAValue = 6.66;
 
 % Derived
-delta_hpITValue = ... % delta_hpIT
+c.delta_hpITValue = ... % delta_hpIT
     (CoolProp.PropsSI('H','P',86.5e5,'S',...
     CoolProp.PropsSI('S','P',38e5,...
     'H',CoolProp.PropsSI('H','P',38e5,'Q',1,'CO2'),'CO2'),'CO2')-...
     CoolProp.PropsSI('H','P',38e5,'Q',1,'CO2'))/...
     (86.5e5-38e5);
+
+fields = fieldnames(c);
+for it = 1:numel(fields)
+    eval(['syms ' fields{it}(1:end-5)]);
+    ABCD = subs(ABCD,eval(['{' num2str(fields{it}(1:end-5)) '}']),c.(fields{it}));
+end
+
+symvars = symvar(ABCD);
+symvarsstr = ['(', strjoin(arrayfun(@char, symvars, 'uniform', 0),', '), ')'];
+endindex = find(any([symvarsstr == ','; symvarsstr == ')']));
+startindex = find(any([symvarsstr == '('; symvarsstr == ' ']));
+value = [];
+for it = 1:length(symvars)
+    value = [value symvarsstr(startindex(it)+1:endindex(it)-1) 'Value,'];
+end
+value = value(1:end-1);
+
+ABCD = matlabFunction(ABCD);
 
 save('constants.mat')
