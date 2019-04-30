@@ -7,6 +7,7 @@ system.B = systemDisc.B;
 system.C = systemDisc.C;
 system.D = systemDisc.D;
 % x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; hMT; TA0; DmQ];
+% u = [CRA; BPR; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hMT];
 Cz = zeros(nz,nx);
 Cz(1,8) = 1; Cz(2,9) = 1; Cz(3,15) = 1; Cz(4,16) = 1;
 system.Cz = Cz;
