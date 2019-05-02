@@ -1,0 +1,12 @@
+Feedforward input plant:
+Feedforward
+
+Test for substituting values:
+substest
+
+Non-feasible experiment for tracking stationary values of states (g is not invertible, f assumes no dynamics):
+finit
+f
+ginverseinit
+ginverse
+

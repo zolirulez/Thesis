@@ -54,7 +54,7 @@ ABCD = [A B; C D];
 % Constants
 c.eSValue = 0.6; % eS
 c.MxfITValue = 48; % MxfIT
-c.KvVValue = 0.8*3e-5;% 8.7841e-06;
+c.KvVValue = 0.8*6.753523557070838e-06; % 0.8*3e-5;% 8.7841e-06;
 c.TauVValue = 1;
 c.TauVAValue = 5;
 c.TauBPValue = 1;
@@ -63,14 +63,14 @@ c.TauRValue = 1;
 c.TauTAValue = 1;
 c.TauITValue = 5;
 c.TaupValue = 0.1;
-c.RValue = 1.77e4; % R
+c.RValue = 1.77e4; 
 c.VcValue = 19.2/2*1e-3;
 c.VRValue = 133*1e-3;
 c.VGValue = 0.05*1e-3;
 c.s0Value = 5000/2;
 c.kValue = 6000/2;
 c.cpValue = 1000;
-c.dAValue = 1.2;
+c.dAValue = 1.25;
 c.MxDVAValue = 6.66;
 
 % Derived

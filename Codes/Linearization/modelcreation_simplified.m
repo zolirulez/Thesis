@@ -84,11 +84,14 @@ pRm = pR;
 hRm = hR;
 hHRm = hHR;
 TA1m = TA1;
-DmQm = DmQ;
+DmQm = DmQ; % Boundary condition
+DmVm = DmV; % Should add up
+Dm21m = Dm21;
+h1m = h1;
 % ------------------------- AUGMENTATION ----------------------------------
 Dx = [DDVA; Dp1; Dh1; Dd1; DTA2; DDm21; Dp2; Dh2; Dd2; DTA1; DBP; DDmV; DpR; DhR; DdR; DDmG; Ddelta_h2; DDmQ];
 x = [DVA; p1; h1; d1; TA2; Dm21; p2; h2; d2; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; DmQ];
-y = [p2m; hBPm; pRm; hRm; hHRm; TA1m; DmQm]; 
+y = [p2m; hBPm; pRm; hRm; hHRm; TA1m; DmQm; DmVm; Dm21m; h1m]; 
 u = [CRA; BPR; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hMT];
 d = [delta_h2; DmQ]; % Unknown input to be estimated
 % Dimensions
@@ -96,17 +99,18 @@ nx = length(x);
 nu = length(u);
 ny = length(y);
 % Noises
-DVBound = 0.005*0;
+DVBound = 0.005;
 pBound = 5*10^5;
 hBound = 20*10^3;
-BPBound = 0.0001*0;
-dBound = 10;
+BPBound = 0;
+dBound = 20;
 TBound = 5;
-DmBound = 0.0005;
-noise.R = diag([pBound; hBound; pBound; hBound; hBound; TBound; DmBound]);
-noise.Q = diag([DVBound; pBound; hBound; dBound; TBound; DmBound; pBound;...
-    hBound; dBound; TBound; BPBound; DmBound; pBound; hBound; dBound;...
-    DmBound; hBound; DmBound])*10; % TODO
+DmBound = 0.005;
+noise.R = diag([pBound*0; hBound*0; pBound*0; hBound*0; hBound*0;...
+    TBound; DmBound; DmBound; DmBound; hBound*1e3]);
+noise.Q = diag([DVBound*0; pBound; hBound; dBound; TBound; DmBound; pBound;...
+    hBound; dBound; TBound; BPBound*0; DmBound; pBound; hBound; dBound;...
+    DmBound*0; hBound*1e2; DmBound*1e2])*1e2; % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians
