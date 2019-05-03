@@ -14,6 +14,7 @@ classdef KalmanFilter < handle
         wf   % Estimate of process noise
         y    % Measurement
         z    % Output
+        e    % Innovation (measurement error)
         % Covariance and filtering matrices
         R    % Covariance of measurement noise
         Q    % Covariance of process noise
@@ -52,9 +53,9 @@ classdef KalmanFilter < handle
                 kf.Kw = kf.S/Re;
             end
             % Signals
-            e = y - (kf.C*kf.x1 + kf.D*u(:,1));
-            kf.xf = kf.x1 + kf.Kx*e;
-            kf.wf = kf.Kw*e;
+            kf.e = y - (kf.C*kf.x1 + kf.D*u(:,1));
+            kf.xf = kf.x1 + kf.Kx*kf.e;
+            kf.wf = kf.Kw*kf.e;
             % Covariances
             kf.Pf = kf.P1 - kf.Kx*Re*kf.Kx';
             kf.Q = kf.Q - kf.Kw*Re*kf.Kw';
@@ -63,8 +64,9 @@ classdef KalmanFilter < handle
             % Signals
             kf.x1 = kf.A*kf.xf + kf.B*u(:,1) + kf.G*kf.wf;
             % Covariances
-            kf.P1 = kf.A*kf.Pf*kf.A' + kf.G*kf.Q*kf.G'...
-                - kf.A*kf.Kx*kf.S'*kf.G' - kf.G*kf.S*kf.Kx'*kf.A';
+            kf.P1 = kf.A*kf.Pf*kf.A' + kf.G*kf.Q*kf.G' ...
+                - kf.A*kf.Kx*kf.S'*kf.G' - kf.G*kf.S*kf.Kx'*kf.A' + ...
+                0*1e-8*eye(kf.nx); % Numerical correction coming
         end
         function statePrediction(kf,u,Q,j)
             % Signals

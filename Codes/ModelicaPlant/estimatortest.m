@@ -23,14 +23,12 @@ lti = 0;
 feedback = 1; % feedback of estimator
 U = uy_sim.signals.values(:,1:nu);
 Y = uy_sim.signals.values(:,nu+1:nu+ny); %TODO
-% uvec = U - initial.us';
-% yvec = Y - (kf.C*initial.xs + kf.D*initial.us)';
 uy = [zeros(nu+ny,1); reshape(system.A,nx*nx,1); reshape(system.B,nx*nu,1); reshape(system.C,ny*nx,1); reshape(system.D,ny*nu,1)];
 ABCD = reshape([system.A system.B; system.C system.D],(nx+ny)*(nx+nu),1);
 Xs = initial.xs;
 finish = 10000;
 start = 501;
-record = zeros(nx,finish-start+1);
+record = zeros(nx+nx+nx+ny,finish-start+1);
 % TEMPORARILY TODO
 Y(:,8) = Xs(6);
 Y(:,9) = Xs(18) + Xs(16);
@@ -70,29 +68,39 @@ for it = start:finish
         y = Y(it+1,:)' - Y(it,:)';
     end
     uy = [u; y; A; B; C; D];
-    record(:,it-start+1) = Xs;
+    for itnorm = 1:nx
+        normKx(itnorm,1) = norm(kf.Kx(itnorm,:));
+        normP1(itnorm,1) = norm(kf.P1(itnorm,:));
+    end
+    record(:,it-start+1) = [Xs; normP1; normKx; kf.e];
 end
 t = start:Ts:finish;
 figure(1)
 clf
 subplot(321)
 hold on
-plot(t,record(2,:))
-plot(t,record(7,:))
-plot(t,record(13,:))
+plot(t,record(2,:)/1e5)
+plot(t,record(7,:)/1e5)
+plot(t,record(13,:)/1e5)
 hold off
+xlabel('Time [s]')
+ylabel('Pressure [bar]')
 subplot(322)
 hold on
-plot(t,record(3,:))
-plot(t,record(8,:))
-plot(t,record(14,:))
-plot(t,record(17,:))
+plot(t,record(3,:)/1000)
+plot(t,record(8,:)/1000)
+plot(t,record(14,:)/1000)
+plot(t,record(17,:)/1000)
 hold off
+xlabel('Time [s]')
+ylabel('Enthalpy [J/kg]')
 subplot(323)
 hold on
-plot(t,record(5,:)-273)
-plot(t,record(10,:)-273)
+plot(t,record(5,:)-273.15)
+plot(t,record(10,:)-273.15)
 hold off
+xlabel('Time [s]')
+ylabel('Temperature [C]')
 subplot(324)
 hold on
 plot(t,record(6,:))
@@ -100,14 +108,35 @@ plot(t,record(12,:))
 plot(t,record(16,:))
 plot(t,record(18,:))
 hold off
+xlabel('Time [s]')
+ylabel('Mass flow rate [kg/s]')
 subplot(325)
 hold on
 plot(t,record(4,:))
 plot(t,record(9,:))
 plot(t,record(15,:))
 hold off
+xlabel('Time [s]')
+ylabel('Density [kg/m^3]')
 subplot(326)
 hold on
 plot(t,record(1,:))
 plot(t,record(11,:))
 hold off
+
+figure(2)
+subplot(311)
+plot(t,record(nx+1:nx+nx,:)./sqrt(diag(noise.Q)))
+xlabel('Time [s]')
+ylabel('Relative norm of P_1')
+legend('DVA','p1','h1','d1','TA2','Dm21','p2','h2','d2','TA1','BP','DmV','pR','hR','dR','DmG','delta_h2','DmQ');
+subplot(312)
+plot(t,record(nx+nx+1:nx+nx+nx,:)./sqrt(diag(noise.Q)))
+xlabel('Time [s]')
+ylabel('Relative norm of K_x')
+legend('DVA','p1','h1','d1','TA2','Dm21','p2','h2','d2','TA1','BP','DmV','pR','hR','dR','DmG','delta_h2','DmQ');
+subplot(313)
+plot(t,record(nx+nx+nx+1:nx+nx+nx+ny,:)./sqrt(diag(noise.R)))
+legend('p_2','h_B_P','p_R','h_R','h_H_R','T_A_1','Dm_Q','Dm_V','Dm_2_1')
+xlabel('Time [s]')
+ylabel('Relative innovation')

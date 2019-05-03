@@ -2,7 +2,7 @@
 clearvars
 close all
 resolution = 5;
-division = 50;
+division = 200;
 Pbig = linspace(30,100,division+1)*1e5;
 Hbig = linspace(200,525,division+1)*1e3;
 maxerrorP = 0;
@@ -25,11 +25,11 @@ for it1 = 1:division
                 catch
                     disp('bug')
                     if h > 1
-                        D(h,p) = D(h-1,p);
-                        T(h,p) = T(h-1,p);
+                    D(h,p) = CoolProp.PropsSI('D','P',P(p)+1e4,'H',H(h),'CO2');
+                    T(h,p) = CoolProp.PropsSI('T','P',P(p)+1e4,'H',H(h),'CO2');
                     else
-                        D(h,p) = D(h,p-1);
-                        T(h,p) = T(h,p-1);
+                    D(h,p) = CoolProp.PropsSI('D','P',P(p)+1e4,'H',H(h),'CO2');
+                    T(h,p) = CoolProp.PropsSI('T','P',P(p)+1e4,'H',H(h),'CO2');
                     end
                 end
                 states = [states; P(p),T(h,p),H(h),D(h,p)];

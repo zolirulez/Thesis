@@ -102,15 +102,15 @@ ny = length(y);
 DVBound = 0.005;
 pBound = 5*10^5;
 hBound = 20*10^3;
-BPBound = 0;
+BPBound = 1e-5;
 dBound = 20;
 TBound = 5;
 DmBound = 0.005;
-noise.R = diag([pBound*0; hBound*0; pBound*0; hBound*0; hBound*0;...
+noise.R = diag([pBound*1e-5; hBound*1e-5; pBound*1e-5; hBound*1e-5; hBound*1e-5;...
     TBound; DmBound; DmBound; DmBound; hBound*1e3]);
-noise.Q = diag([DVBound*0; pBound; hBound; dBound; TBound; DmBound; pBound;...
-    hBound; dBound; TBound; BPBound*0; DmBound; pBound; hBound; dBound;...
-    DmBound*0; hBound*1e2; DmBound*1e2])*1e2; % TODO
+noise.Q = diag([DVBound*1e-5; pBound; hBound; dBound; TBound; DmBound; pBound;...
+    hBound; dBound; TBound; BPBound*1e-5; DmBound; pBound; hBound; dBound;...
+    DmBound*1e-5; hBound*1e2; DmBound*1e2])*1e2; % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians
