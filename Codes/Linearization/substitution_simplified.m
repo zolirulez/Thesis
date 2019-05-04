@@ -21,7 +21,7 @@ KvValues = [0.8 2]*3e-5;% 8.7841e-06;% KvV KvG
 TauValues = [1 5 1 10 1 1 5 0.1]; % TauV TauVA TauBP TauQ TauR TauTA TauIT Taup
 RValues = sqrt(dValues(1)*(pValues(1)-pValues(2)))/DmValues(1); % 2.5e4 % R
 eValues = 0.6; % eS
-sigmaValues = [5000/2*5 6000/2*5 1000]; % s0 k cp % TODO /5
+sigmaValues = [5000/2 6000/2 1000]; % s0 k cp % TODO /5
 VValues = [19.2/2 133 0.05]*10^-3; % Vc VR VG
 CRValues = [0 DmValues(1)/KvValues(1)/sqrt(dValues(2)*(pValues(2)-pValues(3)))...
     DVValues(1)/DVValues(2) DmValues(2)/dValues(4)/fValues(1)/VValues(3)]; % BP CRV CRA CRIT

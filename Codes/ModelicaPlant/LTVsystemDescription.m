@@ -97,12 +97,12 @@ else
     delta_h2Value = x(17);
     DmQValue = x(18);
     % Tables
-    p1idx = max(1,[find(p1Value < Pbig)-1 50]);
-    p2idx = max(1,[find(p2Value < Pbig)-1 50]);
-    pRidx = max(1,[find(pRValue < Pbig)-1 50]);
-    h1idx = max(1,[find(h1Value < Hbig)-1 50]);
-    h2idx = max(1,[find(h2Value < Hbig)-1 50]);
-    hRidx = max(1,[find(hRValue < Hbig)-1 50]);
+    p1idx = max(1,[find(p1Value < Pbig)-1 51]);
+    p2idx = max(1,[find(p2Value < Pbig)-1 51]);
+    pRidx = max(1,[find(pRValue < Pbig)-1 51]);
+    h1idx = max(1,[find(h1Value < Hbig)-1 51]);
+    h2idx = max(1,[find(h2Value < Hbig)-1 51]);
+    hRidx = max(1,[find(hRValue < Hbig)-1 51]);
     delta_ph1Value = paramvectorP(1,p1idx(1),h1idx(1));
     delta_ph2Value = paramvectorP(1,p2idx(1),h2idx(1));
     delta_phRValue = paramvectorP(1,pRidx(1),hRidx(1));

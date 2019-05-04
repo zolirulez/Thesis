@@ -19,7 +19,7 @@ initial.xs = [DVValues(1); pValues(1); hValues(1); dValues(1); TA2Values; DmValu
 initial.x = zeros(nx,1);
 initial.us = [CRValues(3); CRValues(1); CRValues(2); CRValues(4); ...
     delta_hValues(1); dValues(5); dValues(4); hValues(4); hValues(3); TA0Values; hValues(6)];
-initial.P = 3*noise.Q;
+initial.P = 30*noise.Q;
 kfType = 'timevarying';
 kf = KalmanFilter;
 horizon = 1;

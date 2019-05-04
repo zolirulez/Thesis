@@ -129,7 +129,7 @@ classdef KalmanFilter < handle
             end
             kf.measurementUpdate(u,y);
             kf.timeUpdate(u);
-            kf.markovPrediction(u);
+%             kf.markovPrediction(u);
             xf = kf.xf;
             x1 = kf.x1;
             z = kf.z;
