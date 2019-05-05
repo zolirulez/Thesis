@@ -1,7 +1,6 @@
 clearvars
 format long
 % Initializing FMIKit and adding paths
-FMIKit.initialize
 addpath('C:\Users\u375749\Documents\Thesis\Codes\Linearization')
 addpath('C:\Users\u375749\Documents\Thesis\Codes\MatlabPlant')
 % 'Running modelcreation_simplified.m
@@ -13,6 +12,7 @@ substitution_simplified
 kfinit_simulink
 
 % Experiment for observation
+gFunction = ginit(y);
 UFunction = u;
 YFunction = y;
 % Experiment for actuation
@@ -20,15 +20,15 @@ XFunction = x;
 load uy_sim
 
 lti = 0;
-interactionDamping = 0.8;
+interactionDamping = 1;
 feedback = 1; % feedback of estimator
 U = uy_sim.signals.values(:,1:nu);
 Y = uy_sim.signals.values(:,nu+1:nu+ny); %TODO
 uy = [zeros(nu+ny,1); reshape(system.A,nx*nx,1); reshape(system.B,nx*nu,1); reshape(system.C,ny*nx,1); reshape(system.D,ny*nu,1)];
 ABCD = reshape([system.A system.B; system.C system.D],(nx+ny)*(nx+nu),1);
-Xs = initial.xs*1;
+Xs = initial.xs;
 finish = 10000;
-start = 501;
+start = 1001;
 record = NaN(nx+nx+nx+ny,finish-start+1);
 for it = start:finish
     if ~rem(it,100)
@@ -54,12 +54,13 @@ for it = start:finish
         % Constraints (note: feedback)
         w = Xs(1)*1000*1.25/(5000 + Xs(1)*6000)*2;
         TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
-        TA1c = -1/w*TBP+(w+1)/w*U(it+1,10);
-        DmQc = 36e3/(440e3-U(it+1,9))+11e3/(440e3-U(it+1,9));
-        Dm21c = Xs(12);
-        Y(it+1,6:8) = [TA1c; DmQc; Dm21c];
+        TA1c = 1/w*TBP+(w-1)/w*U(it+1,10);
+        DmQ1c = 36e3/(440e3-U(it+1,9))+11e3/(440e3-U(it+1,9));
+        DmQ2c = Xs(7) - Xs(11);
+        dRc = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
+        Y(it+1,6:9) = [TA1c; DmQ1c; DmQ2c; dRc];
         if it > start
-            y = Y(it+1,1:ny)' - (Y(it,1:ny)' + (kf.C*kf.x1 + kf.D*u)*interactionDamping);
+            y = Y(it+1,1:ny)' - g(gFunction,XFunction,Xs,UFunction,U(it,:));
         else
             y = zeros(ny,1);
         end

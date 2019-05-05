@@ -13,8 +13,7 @@ Wt = W';
 norm(Wt\E*Wt-A,Inf)
 disp('The smaller this norm, the more reliable the modal matrix is')
 % Separating real and imaginary values
-Wt = real([Wt(1:6,:); real(Wt(7,:)); imag(Wt(7,:));...
-    Wt(9,:); real(Wt(10,:)); imag(Wt(10,:)); Wt(12:end,:)]);
+Wt = real([Wt(1:5,:); real(Wt(6,:)); imag(Wt(6,:)); Wt(8:end,:)]);
 realexpeigA = sign(real(E)).*exp(abs(real(E)));
 realexpeigA(real(E)==0) = 0;
 imagexpeigA = sign(imag(E)).*exp(abs(imag(E)));
