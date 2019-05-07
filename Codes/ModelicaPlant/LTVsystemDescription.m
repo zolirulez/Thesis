@@ -1,4 +1,4 @@
-function ABCD = LTVsystemDescription(u,x,y,feedback)
+function ABCD = LTVsystemDescription(u,x,y,w)
 
 % Use x or y (x means feedback, y means rough assumptions)
 % feedback = 0;
@@ -23,92 +23,39 @@ TA0Value = u(10);
 hMTValue = u(11);
 
 
-if ~feedback
-% --------------- OUTDATED -------------
-warning('Cannot run outdated open loop parameter estimation')
-%     p2Value = y(1);
-%     hBPValue = y(2);
-%     pRValue = y(3);
-%     hRValue = y(4);
-%     hHRValue = y(5);
-%     TA1Value = y(6);
-%     DmQValue = y(7);
-%     
-%     % Used state values
-%     DVAValue = c.MxDVAValue*CRAValue;
-%     p1Value = p2Value + 1.5e5;
-%     h1Value = (hBPValue + initx(17) + hHRValue)/2;
-%     d1Value = initx(4);
-%     sValue = c.s0Value + c.kValue*DVAValue;
-%     wValue = c.dAValue*DVAValue*c.cpValue/sValue;
-%     h2Value = hBPValue + initx(17);
-%     
-%     % Table values
-%     try
-%         p1idx = [find(p1Value < Pbig)-1 50];
-%         p2idx = [find(p2Value < Pbig)-1 50];
-%         pRidx = [find(pRValue < Pbig)-1 50];
-%         h1idx = [find(h1Value < Hbig)-1 50];
-%         h2idx = [find(h2Value < Hbig)-1 50];
-%         hRidx = [find(hRValue < Hbig)-1 50];
-%         delta_ph1Value = paramvectorP(1,p1idx(1),h1idx(1));
-%         delta_ph2Value = paramvectorP(1,p2idx(1),h2idx(1));
-%         delta_phRValue = paramvectorP(1,pRidx(1),hRidx(1));
-%         delta_pd1Value = paramvectorP(2,p1idx(1),h1idx(1));
-%         delta_pd2Value = paramvectorP(2,p2idx(1),h2idx(1));
-%         delta_pdRValue = paramvectorP(2,pRidx(1),hRidx(1));
-%         delta_Th1Value = paramvectorT(1,p1idx(1),h1idx(1));
-%         delta_Th2Value = paramvectorT(1,p2idx(1),h2idx(1));
-%         delta_Td1Value = paramvectorT(2,p1idx(1),h1idx(1));
-%         delta_Td2Value = paramvectorT(2,p2idx(1),h2idx(1));
-%     catch
-%         disp('stop here')
-%     end
-%     % State values
-%     TA2Value = 1/(wValue+1)*(delta_Th1Value*h1Value + delta_Td1Value*d1Value) + 1/(1/wValue+1)*TA1Value;
-%     Dm21Value = 1/c.RValue*sqrt(d1Value*(p1Value-p2Value));
-%     %     p2Value = initx(7);
-%     d2Value = initx(9);
-%     %     TA1Value = initx(10);
-%     BPValue = BPRValue;
-%     DmVValue = CRVValue*c.KvVValue*sqrt(dBPValue*(p2Value - pRValue));
-%     %     pRValue = initx(13);
-%     %     hRValue = initx(14);
-%     dRValue = initx(15);
-%     DmGValue = dGValue*c.VGValue*CRITValue*c.MxfITValue;
-%     delta_h2Value = initx(17);
-%     %     DmQValue = initx(18);
-else
-    % States MODIFIED (TODO)
-    DVAValue = x(1);
-    p1Value = y(1);
-    h1Value = x(3);
-    d1Value = x(4);
-    TA1Value = y(6);
-    DmVValue = x(6);
-    pRValue = y(3);
-    hRValue = y(4);
-    dRValue = y(8);
-    DmGValue = x(10);
-    delta_hValue = x(11);
-    DmQValue = x(12);
-    hHRValue = y(5);
-    % Tables
-    p1idx = max(1,[find(p1Value < Pbig)-1 51]);
-    pRidx = max(1,[find(pRValue < Pbig)-1 51]);
-    h1idx = max(1,[find(h1Value < Hbig)-1 51]);
-    hRidx = max(1,[find(hRValue < Hbig)-1 51]);
-    delta_ph1Value = paramvectorP(1,p1idx(1),h1idx(1));
-    delta_phRValue = paramvectorP(1,pRidx(1),hRidx(1));
-    delta_pd1Value = paramvectorP(2,p1idx(1),h1idx(1));
-    delta_pdRValue = paramvectorP(2,pRidx(1),hRidx(1));
-    delta_Th1Value = paramvectorT(1,p1idx(1),h1idx(1));
-    delta_Td1Value = paramvectorT(2,p1idx(1),h1idx(1));
-end
 
+% States MODIFIED (TODO)
+DVAValue = x(1);
+p1Value = y(1);
+h1Value = x(3);
+d1Value = x(4);
+TA1Value = y(6);
+DmVValue = x(6);
+pRValue = y(3);
+hRValue = y(4);
+dRValue = y(8);
+DmGValue = x(10);
+delta_hValue = x(11);
+DmQValue = x(12);
+hHRValue = y(5);
+% Tables
+p1idx = max(1,[find(p1Value < Pbig)-1 51]);
+pRidx = max(1,[find(pRValue < Pbig)-1 51]);
+h1idx = max(1,[find(h1Value < Hbig)-1 51]);
+hRidx = max(1,[find(hRValue < Hbig)-1 51]);
+delta_ph1Value = paramvectorP(1,p1idx(1),h1idx(1));
+delta_phRValue = paramvectorP(1,pRidx(1),hRidx(1));
+delta_pd1Value = paramvectorP(2,p1idx(1),h1idx(1));
+delta_pdRValue = paramvectorP(2,pRidx(1),hRidx(1));
+delta_Th1Value = paramvectorT(1,p1idx(1),h1idx(1));
+delta_Td1Value = paramvectorT(2,p1idx(1),h1idx(1));
+
+% Parameter estimation results
+s0Value = w(1);
+kValue = w(2);
 
 % Substitutions
-value = [strrep('BP,CRIT,CRV,DVA,DmG,DmQ,DmV,TA0,TA1,d1,dBP,dG,dR,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_pdR,delta_phR,h1,hG,hHR,hL,hMT,p1,pR',',','Value,') 'Value'];
+value = [strrep('BP,CRIT,CRV,DVA,DmG,DmQ,DmV,TA0,TA1,d1,dBP,dG,dR,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_pdR,delta_phR,h1,hG,hHR,hL,hMT,k,p1,pR,s0',',','Value,') 'Value'];
 ABCD = eval(['ABCD(' value ');']);
 A = ABCD(1:nx,1:nx);
 B = ABCD(1:nx,nx+1:nx+nu);

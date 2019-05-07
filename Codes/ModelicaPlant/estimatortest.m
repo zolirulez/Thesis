@@ -19,7 +19,6 @@ YFunction = y;
 XFunction = x;
 load uy_sim_flat
 
-feedback = 1; % feedback of estimator
 U = uy_sim.signals.values(:,1:nu);
 Y = uy_sim.signals.values(:,nu+1:nu+ny); %TODO
 uy = [zeros(nu+ny,1); reshape(system.A,nx*nx,1); reshape(system.B,nx*nu,1); reshape(system.C,ny*nx,1); reshape(system.D,ny*nu,1)];
@@ -34,7 +33,13 @@ TA1c = 1/w*TBP+(w-1)/w*U(start,10);
 DmQc = 36e3/(440e3-U(start,9))+11e3/(440e3-U(start,9));
 dRc = CoolProp.PropsSI('D','P',Y(start,3),'H',Y(start,4),'CO2');
 Y(start,6:8) = [TA1c; DmQc; dRc];
-record = NaN(nx+nx+nx+ny,finish-start+1);
+% Parameter estimation
+W = [sigmaValues(1); sigmaValues(2)];
+sigma = 74300/3;
+nw = length(W);
+P = diag(W)/10;
+DV = DVValues(1);
+record = NaN(nx+nx+nx+ny+nw,finish-start+1);
 for it = start:finish
     if ~rem(it,100)
         disp(['Iteration ' num2str(it)])
@@ -43,9 +48,17 @@ for it = start:finish
     xf = kf.markovPredictor(uy(1:nu),uy(nu+1:nu+ny),reshape(uy(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uy(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uy(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu));
     Xs = kf.xf + Xs;
     Xs = max(0,Xs);
-    UXY = [U(it,:)'; Xs; Y(it,1:ny)'];
+    % ----- Parameter estimation
+    DV = DV*(1-Ts/TauValues(2)) + Ts/TauValues(2)*U(it,1)*DVValues(2);
+    sigma = TauValues(4)/Ts*(DV*(Y(it,5) - Y(it,2))/(TBP - U(it,10)) - sigma)+ sigma;
+    res = sigma - [1 Xs(1)]*W;
+    schur = 1 + [1 Xs(1)]*P*[1 Xs(1)]';
+    K = P*[1 Xs(1)]'/schur;
+    W = W + K*res; % [sigma0; sigmaSlope]
+    P = P - K*schur*K' + diag(W)/10;
     % ----- Set point for new iteration
-    ABCD = LTVsystemDescription(UXY(1:nu), UXY(nu+1:nu+nx), UXY(nu+nx+1:nu+nx+ny),feedback);
+    UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
+    ABCD = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
     A = ABCD(1:nx*nx);
     B = ABCD(nx*nx+1:nx*nx+nx*nu);
     C = ABCD(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
@@ -64,7 +77,7 @@ for it = start:finish
     % Recording
     statecorrection = kf.Kx*kf.e;
     eigP1 = eig(kf.P1);
-    record(:,it-start+1) = [Xs; eigP1; statecorrection; kf.e];
+    record(:,it-start+1) = [Xs; eigP1; statecorrection; kf.e; W];
 end
 
 
