@@ -11,7 +11,7 @@ end
 
 % Input values
 CRAValue = u(1);
-BPRValue = u(2);
+BPValue = u(2);
 CRVValue = u(3);
 CRITValue = u(4);
 delta_hHRValue = u(5);
@@ -85,14 +85,14 @@ else
     h1Value = x(3);
     d1Value = x(4);
     TA1Value = y(6);
-    BPValue = x(6);
-    DmVValue = x(7);
+    DmVValue = x(6);
     pRValue = y(3);
     hRValue = y(4);
-    dRValue = y(9);
-    DmGValue = x(11);
-    delta_hValue = x(12);
-    DmQValue = x(13);
+    dRValue = y(8);
+    DmGValue = x(10);
+    delta_hValue = x(11);
+    DmQValue = x(12);
+    hHRValue = y(5);
     % Tables
     p1idx = max(1,[find(p1Value < Pbig)-1 51]);
     pRidx = max(1,[find(pRValue < Pbig)-1 51]);
@@ -108,7 +108,7 @@ end
 
 
 % Substitutions
-value = [strrep('BP,CRIT,CRV,DVA,DmG,DmQ,DmV,TA0,TA1,d1,dBP,dG,dR,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_hHR,delta_pdR,delta_phR,h1,hG,hL,hMT,p1,pR',',','Value,') 'Value'];
+value = [strrep('BP,CRIT,CRV,DVA,DmG,DmQ,DmV,TA0,TA1,d1,dBP,dG,dR,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_pdR,delta_phR,h1,hG,hHR,hL,hMT,p1,pR',',','Value,') 'Value'];
 ABCD = eval(['ABCD(' value ');']);
 A = ABCD(1:nx,1:nx);
 B = ABCD(1:nx,nx+1:nx+nu);

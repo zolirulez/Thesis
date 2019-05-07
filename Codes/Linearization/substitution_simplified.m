@@ -1,7 +1,7 @@
 % ------------------------ SUBSTITUTIONS ----------------------------------
 DmValues = [0.321 0.123 0.198 0.198]; % DmV DmG DmL DmMT
 pValues = [85 38]*10^5; % p1 pR
-hValues = [350 ...
+hValues = [380 ...
     CoolProp.PropsSI('H','P',pValues(2),'Q',0,'CO2')/1000 ...
     CoolProp.PropsSI('H','P',pValues(2),'Q',1,'CO2')/1000 ...
     280 525 ...
@@ -10,16 +10,16 @@ hBPValue = 298*10^3;
 delta_hValues = [0 hValues(1)-hBPValue]; % delta_hHR delta_h
 dValues = ... % d1 dR dG dBP dA
     [CoolProp.PropsSI('D','P',pValues(1),'H',hValues(1),'CO2') ...
-    CoolProp.PropsSI('D','P',pValues(2),'H',hValues(5),'CO2') ...
     CoolProp.PropsSI('D','P',pValues(2),'H',hValues(4),'CO2') ...
+    CoolProp.PropsSI('D','P',pValues(2),'H',hValues(3),'CO2') ...
     CoolProp.PropsSI('D','P',pValues(1),'H',hBPValue,'CO2') ...
     1.25];
 DVValues = [3.33 6.66]; % DVA MxDVA
 fValues = 48; % MxfIT
-KvValues = [0.8 2]*3e-5;% 8.7841e-06;% KvV KvG
-TauValues = [1 5 1 10 1 5 0.1]; % TauV TauVA TauBP TauQ TauTA TauIT Taup
+KvValues = 0.8*3e-5;% 8.7841e-06;% KvV
+TauValues = [1 5 10 1 5 0.1]; % TauV TauVA TauQ TauTA TauIT Taup
 eValues = 0.6; % eS
-sigmaValues = [5000/2 6000/2 1000]; % s0 k cp % TODO /5
+sigmaValues = [5000 6000 1000]; % s0 k cp 
 VValues = [19.2 133 0.05]*10^-3; % Vc VR VG
 CRValues = [0 DmValues(1)/KvValues(1)/sqrt(dValues(1)*(pValues(1)-pValues(2)))...
     DVValues(1)/DVValues(2) DmValues(2)/dValues(3)/fValues(1)/VValues(3)]; % BP CRV CRA CRIT
@@ -46,8 +46,8 @@ for it = 1:numel(fields)
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{DVA MxDVA},num2cell(DVValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{BP CRV CRA CRIT},num2cell(CRValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{MxfIT},num2cell(fValues));
-    mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{KvV KvG},num2cell(KvValues));
-    mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{TauV TauVA TauBP TauQ TauTA TauIT Taup},num2cell(TauValues));
+    mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{KvV},num2cell(KvValues));
+    mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{TauV TauVA TauQ TauTA TauIT Taup},num2cell(TauValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{eS},num2cell(eValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{s0 k cp},num2cell(sigmaValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{Vc VR VG},num2cell(VValues));

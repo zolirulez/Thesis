@@ -9,16 +9,16 @@ system.D = systemDisc.D;
 % x = [DVA; p1; h1; d1; TA1; BP; DmV; pR; hR; dR; DmG; delta_h2; DmQ];
 % u = [CRA; BPR; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hMT];
 Cz = zeros(nz,nx);
-Cz(1,2) = 1; Cz(2,3) = 1; Cz(2,12) = -1; Cz(3,8) = 1; Cz(4,9) = 1;
+Cz(1,2) = 1; Cz(2,3) = 1; Cz(2,11) = -1; Cz(3,9) = 1; Cz(4,8) = 1;
 system.Cz = Cz;
 system.G = eye(nx); % This is another G matrix, connected to only stochastic content
 initial.xs = [DVValues(1); pValues(1); hValues(1); dValues(1); TA1Value;...
-    CRValues(1); DmValues(1); pValues(2); hValues(4); dValues(2); DmValues(2);...
-    delta_hValues(2); DmValues(4); 530e5];
+    DmValues(1); pValues(2); hValues(4); dValues(2); DmValues(2);...
+    delta_hValues(2); DmValues(4); 530e3];
 initial.x = zeros(nx,1);
 initial.us = [CRValues(3); CRValues(1); CRValues(2); CRValues(4); ...
-    delta_hValues(1); dValues(5); dValues(4); hValues(4); hValues(3); TA0Values; hValues(6)];
-initial.P = 30*noise.Q;
+    delta_hValues(1); dValues(4); dValues(3); hValues(3); hValues(2); TA0Values; hValues(5)];
+initial.P = 3*noise.Q;
 kfType = 'timevarying';
 kf = KalmanFilter;
 horizon = 1;

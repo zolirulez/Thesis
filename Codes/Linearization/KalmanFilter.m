@@ -159,6 +159,7 @@ classdef KalmanFilter < handle
             kf.Q = noise.Q;
             kf.S = noise.S;
             kf.x1 = initial.x;
+            kf.xf = initial.x;
             kf.P1 = initial.P;
             % Length of vectors
             kf.nu = size(kf.B,2);
