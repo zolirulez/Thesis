@@ -1,4 +1,4 @@
-function [A,B,C,D] = constantsave(A,B,C,D)
+function [A,B,C,D] = constantsave(A,B,C,D,Q)
 
 load transferparam
 
@@ -13,6 +13,8 @@ load transferparam
 % c.delta_Td1Value = 0.16;
 % c.delta_Td2Value = 0.15;
 
+Lq = chol(Q,'lower');
+
 % Dimensions
 nx = length(A);
 nu = size(B,2);
@@ -25,10 +27,9 @@ c.eSValue = 0.65; % eS
 c.MxfITValue = 48; % MxfIT
 c.KvVValue = 0.8*3e-5; %0.8*6.753523557070838e-06; % 8.7841e-06;
 c.TauVValue = 1;
-c.TauVAValue = 5;
+c.TauVAValue = 1;
 c.TauQValue = 10;
 c.TauTAValue = 1;
-c.TauITValue = 5;
 c.TaupValue = 0.1;
 c.VcValue = 19.2*1e-3;
 c.VRValue = 133*1e-3;
@@ -37,7 +38,7 @@ c.VGValue = 0.05*1e-3;
 % c.kValue = 7000;
 c.cpValue = 1000;
 c.dAValue = 1.25;
-c.MxDVAValue = 6.66;
+c.MxDVAValue = 5.2;
 
 % Derived
 c.delta_hpITValue = ... % delta_hpIT

@@ -108,7 +108,7 @@ classdef KalmanFilter < handle
                 if nargin < 6
                     error('Time varying system matrices are not provided')
                 end
-                kf.timeVariation(A,B,C,D);
+                kf.timeVariation(A,B,C,D,Q);
             end
             kf.measurementUpdate(u,y);
             kf.timeUpdate(u);
@@ -119,13 +119,13 @@ classdef KalmanFilter < handle
             xj = kf.xj;
             z = kf.z;
         end
-        function [xf, x1, z] = markovPredictor(kf,u,y,A,B,C,D)
+        function [xf, x1, z] = markovPredictor(kf,u,y,A,B,C,D,Q)
             if strcmp(kf.kalmanFilterType,'timevarying')
                 if nargin < 6
                     error('Time varying system matrices are not provided')
                 end
                 kf.markovInitialization;
-                kf.timeVariation(A,B,C,D);
+                kf.timeVariation(A,B,C,D,Q);
             end
             kf.measurementUpdate(u,y);
             kf.timeUpdate(u);
@@ -134,7 +134,7 @@ classdef KalmanFilter < handle
             x1 = kf.x1;
             z = kf.z;
         end
-        function timeVariation(kf,A,B,C,D)
+        function timeVariation(kf,A,B,C,D,Q)
             % Function for the case of changing system matrices. The
             %     methodology is not clarified yet.
             
@@ -144,7 +144,7 @@ classdef KalmanFilter < handle
             kf.D = D;
             %             kf.Cz = 0;
             %             kf.R = 0;
-            %             kf.Q = 0;
+            kf.Q = Q;
             %             kf.S = 0;
         end
         function initialize(kf,system,noise,initial,kalmanFilterType,horizon)
