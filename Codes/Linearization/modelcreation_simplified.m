@@ -93,9 +93,9 @@ hBound = 20*10^3;
 dBound = 20;
 TBound = 5;
 DmBound = 0.1;
-noise.R = diag([pBound; hBound; pBound; hBound; TBound; DmBound; dBound]);
-Qcont = diag([pBound; hBound; dBound; TBound; pBound; hBound; dBound;...
-    hBound; DmBound])/1e6; % TODO
+noise.R = diag([pBound; hBound; pBound; hBound; TBound*1e20; DmBound*1e20; dBound]);
+Qcont = diag([pBound*1e5; hBound*1e5; dBound; TBound; pBound*1e5; hBound; dBound;...
+    hBound; DmBound*1e-20]); % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians

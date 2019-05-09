@@ -7,5 +7,8 @@ Bd = Phi(1:nx,nx+1:nx+nu);
 
 M = [-Ac' Gc*Gc'; zeros(nx,nx) Ac];
 Phi = expm(M*Ts);
+% Simplification...
+Phi = eye(nx*2) + M*Ts;
 Abar = Phi(nx+1:nx+nx,nx+1:nx+nx);
 Qd = Ad'*Phi(1:nx,nx+1:nx+nx);
+Qd = Gc*Gc';
