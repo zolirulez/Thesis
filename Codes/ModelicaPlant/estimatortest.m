@@ -39,10 +39,9 @@ W = [5000; 6000];
 % Constraints (note: feedback)
 w = DV*sigmaValues(3)*dValues(5)/(W(1) + DV*W(2));
 TBP = CoolProp.PropsSI('T','P',Y(start,1),'H',Y(start,2),'CO2');
-TA1c = 1/w*TBP+(w-1)/w*U(start,10);
 DmQc = 36e3/(440e3-U(start,9))+11e3/(440e3-U(start,9));
 dRc = CoolProp.PropsSI('D','P',Y(start,3),'H',Y(start,4),'CO2');
-Y(start,5:7) = [TA1c; DmQc; dRc];
+Y(start,5:6) = [DmQc; dRc];
 record = NaN(nx+nx+nx+ny+nw,finish-start+1);
 for it = start:finish
     if ~rem(it,100)
@@ -51,7 +50,6 @@ for it = start:finish
     % ----- Estimation based on delayed parameters
     xf = kf.markovPredictor(uy(1:nu),uy(nu+1:nu+ny),reshape(uy(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uy(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uy(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     Xs = kf.xf + Xs;
-    Xs = max(0,Xs);
     % ----- Parameter estimation
     DV = DV*(1-Ts/TauValues(2)) + Ts/TauValues(2)*U(it-1,1)*DVValues(2);
     DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
@@ -76,10 +74,9 @@ for it = start:finish
     % Constraints (note: feedback)
     w = DV*sigmaValues(3)*dValues(5)/(W(1) + DV*W(2));
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
-    TA1c = 1/w*TBP+(w-1)/w*U(it+1,10);
     DmQc = 36e3/(440e3-U(it+1,9))+11e3/(440e3-U(it+1,9));
     dRc = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
-    Y(it+1,5:7) = [TA1c; DmQc; dRc];
+    Y(it+1,5:6) = [DmQc; dRc];
     y = Y(it+1,1:ny)' - g(gFunction,XFunction,Xs,UFunction,U(it,:));
     uy = [u; y; A; B; C; D; Q];
     % Recording

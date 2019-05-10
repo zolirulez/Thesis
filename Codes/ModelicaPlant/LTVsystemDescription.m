@@ -29,7 +29,7 @@ d1Value = x(3);
 TA1Value = x(4);
 pRValue = y(3);
 hRValue = y(4);
-dRValue = y(7);
+dRValue = y(6);
 delta_hValue = x(8);
 DmQValue = x(9);
 % Tables

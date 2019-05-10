@@ -1,5 +1,5 @@
 syms KvV                                % Kv value of valve
-syms TauV TauVA TauQ TauTA TauIT Taup   % Time constants
+syms TauV TauVA TauQ TauTA TauIT Taup Tauh   % Time constants
 syms TauFake                            % Fake time constant for derivative conversions
 syms R                                  % Hydraulic resistance
 syms Vc VR VG                           % Volumes of cells, reseiver and piston
@@ -66,20 +66,19 @@ DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG);
 % IT Compressor
 % Fan (A refers to air)
 % Disturbances
-Ddelta_h = 0;
+Ddelta_h = -1/Tauh*delta_h;
 DDmQ = 1/TauQ*(-DmQ + DmV - DmG);
 % ------------------------- MEASUREMENTS ----------------------------------
 p1m = p1;
 hBPm = hBP;
 pRm = pR;
 hRm = hR;
-TA1m = TA1;
 DmQm = DmQ; % Boundary condition
 dRm = dR;
 % ------------------------- AUGMENTATION ----------------------------------
 Dx = [Dp1; Dh1; Dd1; DTA1; DpR; DhR; DdR; Ddelta_h; DDmQ];
 x = [p1; h1; d1; TA1; pR; hR; dR; delta_h; DmQ];
-y = [p1m; hBPm; pRm; hRm; TA1m; DmQ; dR]; 
+y = [p1m; hBPm; pRm; hRm; DmQ; dR]; 
 u = [CRA; BP; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hHR];
 d = [delta_h; DmQ]; % Unknown input to be estimated
 % Dimensions
@@ -93,9 +92,9 @@ hBound = 20*10^3;
 dBound = 20;
 TBound = 5;
 DmBound = 0.1;
-noise.R = diag([pBound; hBound; pBound; hBound; TBound*1e20; DmBound*1e20; dBound]);
-Qcont = diag([pBound*1e5; hBound*1e5; dBound; TBound; pBound*1e5; hBound; dBound;...
-    hBound; DmBound*1e-20]); % TODO
+noise.R = diag([pBound; hBound; pBound; hBound; DmBound*1e5; dBound]);
+Qcont = diag([pBound*1e5; hBound; dBound; TBound; pBound*1e5; hBound; dBound;...
+    hBound*1e5; DmBound*1e-5]); % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians

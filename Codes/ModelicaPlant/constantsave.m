@@ -31,6 +31,7 @@ c.TauVAValue = 1;
 c.TauQValue = 10;
 c.TauTAValue = 1;
 c.TaupValue = 0.1;
+c.TauhValue = 60;
 c.VcValue = 19.2*1e-3;
 c.VRValue = 133*1e-3;
 c.VGValue = 0.05*1e-3;
