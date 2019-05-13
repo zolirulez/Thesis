@@ -75,10 +75,11 @@ pRm = pR;
 hRm = hR;
 DmQm = DmQ; % Boundary condition
 dRm = dR;
+T1m = T1;
 % ------------------------- AUGMENTATION ----------------------------------
 Dx = [Dp1; Dh1; Dd1; DTA1; DpR; DhR; DdR; Ddelta_h; DDmQ];
 x = [p1; h1; d1; TA1; pR; hR; dR; delta_h; DmQ];
-y = [p1m; hBPm; pRm; hRm; DmQ; dR]; 
+y = [p1m; hBPm; pRm; hRm; DmQ; dR; T1m]; 
 u = [CRA; BP; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hHR];
 d = [delta_h; DmQ]; % Unknown input to be estimated
 % Dimensions
@@ -92,7 +93,8 @@ hBound = 20*10^3;
 dBound = 20;
 TBound = 5;
 DmBound = 0.1;
-noise.R = diag([pBound; hBound; pBound; hBound; DmBound*1e5; dBound]);
+% Note: simulate with correct fillingratio noise!
+noise.R = diag([pBound; hBound; pBound; hBound; DmBound*1e-1; dBound; TBound]);
 Qcont = diag([pBound*1e5; hBound; dBound; TBound; pBound*1e5; hBound; dBound;...
     hBound*1e5; DmBound*1e-5]); % TODO
 noise.S = zeros(nx,ny);

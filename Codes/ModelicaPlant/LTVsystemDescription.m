@@ -44,6 +44,8 @@ delta_pdRValue = paramvectorP(2,pRidx(1),hRidx(1));
 delta_Th1Value = paramvectorT(1,p1idx(1),h1idx(1));
 delta_Td1Value = paramvectorT(2,p1idx(1),h1idx(1));
 
+save('deltaValues','delta_Th1Value','delta_Td1Value');
+
 % Parameter estimation results
 s0Value = w(1);
 kValue = w(2);

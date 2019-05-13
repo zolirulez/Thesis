@@ -19,8 +19,13 @@ initial.x = zeros(nx,1);
 initial.us = [CRValues(3); CRValues(1); CRValues(2); CRValues(4); ...
     delta_hValues(1); dValues(4); dValues(3); hValues(3); hValues(2);...
     TA0Value; hValues(5)];
-initial.P = Qcont;
+initial.P = 3*Qcont;
 kfType = 'timevarying';
 kf = KalmanFilter;
 horizon = 1;
 kf.initialize(system,noise,initial,kfType,horizon)
+
+% Noises
+sigma2T = (1/3)^2;
+sigma2p = (0.5*1e5/3)^2;
+sigma2x = (0.01/3)^2;

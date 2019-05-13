@@ -17,7 +17,7 @@ UFunction = u;
 YFunction = y;
 % Experiment for actuation
 XFunction = x;
-load uy_sim_sin
+load uy_sim_sin_noisy
 
 U = uy_sim.signals.values(:,1:nu);
 Y = uy_sim.signals.values(:,nu+1:nu+ny); %TODO
@@ -42,6 +42,11 @@ TBP = CoolProp.PropsSI('T','P',Y(start,1),'H',Y(start,2),'CO2');
 DmQc = 36e3/(440e3-U(start,9))+11e3/(440e3-U(start,9));
 dRc = CoolProp.PropsSI('D','P',Y(start,3),'H',Y(start,4),'CO2');
 Y(start,5:6) = [DmQc; dRc];
+% Low pass filter for hBP
+hBP = Y(start,2);
+TA0 = U(start,10);
+TA1 = Y(start,7);
+Xs(end) = 0.25;
 record = NaN(nx+nx+nx+ny+nw,finish-start+1);
 for it = start:finish
     if ~rem(it,100)
@@ -53,8 +58,8 @@ for it = start:finish
     % ----- Parameter estimation
     DV = DV*(1-Ts/TauValues(2)) + Ts/TauValues(2)*U(it-1,1)*DVValues(2);
     DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
-    DQ = DmV*(U(it,11) - Y(it,2));
-    DT = TBP - U(it,10);
+    DQ = DmV*(U(it,11) - hBP);
+    DT = TBP - TA0;
     sigma = TauValues(4)/Ts*(DQ/DT - sigma)+ sigma;
     res = sigma - [1 DV]*W;
     schur = 1 + [1 DV]*P*[1 DV]';
@@ -74,9 +79,17 @@ for it = start:finish
     % Constraints (note: feedback)
     w = DV*sigmaValues(3)*dValues(5)/(W(1) + DV*W(2));
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
-    DmQc = 36e3/(440e3-U(it+1,9))+11e3/(440e3-U(it+1,9));
+    DmQc = 36e3/(445e3-U(it+1,9))+11e3/(445e3-U(it+1,9));
     dRc = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
     Y(it+1,5:6) = [DmQc; dRc];
+    % Low pass filters for noisy measurements
+    TauNoise = 2;
+    hBP = hBP*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,2);
+    TA0 = TA0*(1-Ts/TauNoise) + Ts/TauNoise*U(it+1,10); 
+    TA1 = TA1*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,7); 
+    Y(it+1,2) = hBP;
+    U(it+1,10) = TA0;
+    Y(it+1,7) = TA1;
     y = Y(it+1,1:ny)' - g(gFunction,XFunction,Xs,UFunction,U(it,:));
     uy = [u; y; A; B; C; D; Q];
     % Recording
