@@ -39,7 +39,8 @@ DVA = MxDVA*CRA;
 s = s0 + k*DVA;
 w = dA*DVA*cp/s;
 T1 = delta_Th1*h1 + delta_Td1*d1;
-DQ1 = (TA1 - T1)*s;
+%DQ1 = (TA1 - T1)*s;
+DQ1 = (TA0 - TA1)*dA*DVA*cp;
 % High pressure valve
 DmV = CRV*KvV*sqrt(dBP*(p1 - pR));
 % Gas cooler, fluid side
@@ -67,20 +68,18 @@ DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG);
 % Fan (A refers to air)
 % Disturbances
 Ddelta_h = -1/Tauh*delta_h;
-DDmQ = 1/TauQ*(-DmQ + DmV - DmG);
 % ------------------------- MEASUREMENTS ----------------------------------
 p1m = p1;
 hBPm = hBP;
 pRm = pR;
 hRm = hR;
-DmQm = DmQ; % Boundary condition
 dRm = dR;
-T1m = T1;
+TA1m = TA1;
 % ------------------------- AUGMENTATION ----------------------------------
-Dx = [Dp1; Dh1; Dd1; DTA1; DpR; DhR; DdR; Ddelta_h; DDmQ];
-x = [p1; h1; d1; TA1; pR; hR; dR; delta_h; DmQ];
-y = [p1m; hBPm; pRm; hRm; DmQ; dR; T1m]; 
-u = [CRA; BP; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hHR];
+Dx = [Dp1; Dh1; Dd1; DTA1; DpR; DhR; DdR; Ddelta_h];
+x = [p1; h1; d1; TA1; pR; hR; dR; delta_h];
+y = [p1m; hBPm; pRm; hRm; dRm; TA1m]; 
+u = [CRA; BP; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hHR; DmQ];
 d = [delta_h; DmQ]; % Unknown input to be estimated
 % Dimensions
 nx = length(x);
@@ -88,15 +87,16 @@ nu = length(u);
 ny = length(y);
 % Noises
 DVBound = 0.5;
-pBound = 5*10^5;
-hBound = 20*10^3;
-dBound = 20;
-TBound = 5;
-DmBound = 0.1;
+pBound = 2*10^5;
+hBound = 5*10^3;
+dBound = 5;
+TBound = 2;
+DmBound = 0.05;
 % Note: simulate with correct fillingratio noise!
-noise.R = diag([pBound; hBound; pBound; hBound; DmBound*1e-1; dBound; TBound]);
-Qcont = diag([pBound*1e5; hBound; dBound; TBound; pBound*1e5; hBound; dBound;...
-    hBound*1e5; DmBound*1e-5]); % TODO
+noise.R = diag([pBound; hBound; pBound; hBound; dBound*1e15; TBound]);
+Qcont = diag([pBound*1e1; hBound*1e2; dBound; TBound*1e1;...
+    pBound*1e1; hBound*1e2; dBound;...
+    hBound*1e3])*1e5; % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians

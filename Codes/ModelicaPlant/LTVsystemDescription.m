@@ -21,6 +21,7 @@ hGValue = u(8);
 hLValue = u(9);
 TA0Value = u(10);
 hHRValue = u(11);
+DmQValue = u(12);
 
 % States MODIFIED (TODO)
 p1Value = y(1);
@@ -31,7 +32,6 @@ pRValue = y(3);
 hRValue = y(4);
 dRValue = y(6);
 delta_hValue = x(8);
-DmQValue = x(9);
 % Tables
 p1idx = max(1,[find(p1Value < Pbig)-1 51]);
 pRidx = max(1,[find(pRValue < Pbig)-1 51]);
@@ -44,7 +44,7 @@ delta_pdRValue = paramvectorP(2,pRidx(1),hRidx(1));
 delta_Th1Value = paramvectorT(1,p1idx(1),h1idx(1));
 delta_Td1Value = paramvectorT(2,p1idx(1),h1idx(1));
 
-save('deltaValues','delta_Th1Value','delta_Td1Value');
+% save('deltaValues','delta_Th1Value','delta_Td1Value');
 
 % Parameter estimation results
 s0Value = w(1);

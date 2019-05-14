@@ -1,5 +1,5 @@
 clearvars
-load h1_sim
+load h1_sim_chaos
 start = 3000;
 Y = h1_sim.signals.values;
 t = h1_sim.time(start:end,:);
@@ -40,4 +40,4 @@ X = [ones(length(THRd),1) THRd TA0(start:end)];
 Y = Tcw(start:end);
 P = (X'*X)\X'*Y;
 max(abs(Y-X*P))
-save('TGC')
+% save('TGC')
