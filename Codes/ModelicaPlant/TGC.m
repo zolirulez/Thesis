@@ -1,6 +1,6 @@
 clearvars
 load h1_sim_chaos
-start = 3000;
+start = 1800;
 Y = h1_sim.signals.values;
 t = h1_sim.time(start:end,:);
 
@@ -28,16 +28,23 @@ end
 THRd = THR;
 delay = 350;
 THRd = THR(start-delay:end-delay);
-figure(1)
+figure(5)
 subplot(211)
 plot(t,THRd-273,t,TBP(start:end)-273,t,TA0(start:end)-273,t,Tcw(start:end)-273)
+xlabel('Time [s]')
+ylabel('Temperetures [C]')
+legend('T_H_R delayed','T_B_P','T_A_0','T_c weighted by density')
 subplot(212)
-plot(t,Tc(start:end,:))
-figure(2)
+plot(t,Tc(start:end,:)-273)
+xlabel('Time [s]')
+ylabel('Cell temperatures [C]')
+figure(6)
 [c,lags] = xcov(Tcw(start:end),THR(start:end));
 plot(lags,c)
+title('Cross covariance between THR and Tcw')
+xlabel('Lag [s]')
 X = [ones(length(THRd),1) THRd TA0(start:end)];
 Y = Tcw(start:end);
 P = (X'*X)\X'*Y;
 max(abs(Y-X*P))
-% save('TGC')
+save('TGC')

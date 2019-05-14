@@ -1,7 +1,7 @@
 t = start:Ts:finish;
 figure(1)
 clf
-subplot(321)
+subplot(221)
 hold on
 plot(t,record(1,:)/1e5)
 plot(t,record(5,:)/1e5)
@@ -9,7 +9,7 @@ hold off
 ylim([30 100])
 xlabel('Time [s]')
 ylabel('Pressure [bar]')
-subplot(322)
+subplot(222)
 hold on
 plot(t,record(2,:)/1000)
 plot(t,record(6,:)/1000)
@@ -18,21 +18,14 @@ hold off
 ylim([-50 600])
 xlabel('Time [s]')
 ylabel('Enthalpy [kJ/kg]')
-subplot(323)
+subplot(223)
 hold on
 plot(t,record(4,:)-273.15)
 hold off
 ylim([-10 120])
 xlabel('Time [s]')
 ylabel('Temperature [C]')
-subplot(324)
-hold on
-plot(t,record(9,:))
-hold off
-ylim([0 0.5])
-xlabel('Time [s]')
-ylabel('Mass flow rate [kg/s]')
-subplot(325)
+subplot(224)
 hold on
 plot(t,record(3,:))
 plot(t,record(7,:))
@@ -62,10 +55,10 @@ legend('h_B_P','h_R')
 xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 subplot(3,3,9)
-plot(t,record(nx+nx+nx+5,:))
-legend('Dm_Q')
+plot(t,record(nx+nx+nx+6,:))
+legend('T_A_1')
 xlabel('Time [s]')
-ylabel('Innovation [kg/s]')
+ylabel('Innovation [K]')
 
 figure(3)
 plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))

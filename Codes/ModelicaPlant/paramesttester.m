@@ -75,3 +75,5 @@ N = length(record2);
 [y,lags] = xcov(record2(1,:),record2(2,:));
 plot(lags,y)
 grid
+plot(lags,y)
+title('Cross covariance')
