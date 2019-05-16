@@ -17,7 +17,7 @@ UFunction = u;
 YFunction = y;
 % Experiment for actuation
 XFunction = x;
-load uy_sim_chaos
+load uy_sim_faulty
 
 U = uy_sim.signals.values(:,1:nu); % TODO
 Y = uy_sim.signals.values(:,nu+1:nu+ny-1); % TODO
@@ -27,10 +27,11 @@ uy = [zeros(nu+ny,1); reshape(system.A,nx*nx,1); reshape(system.B,nx*nu,1); resh
 ABCDQ = [reshape([system.A system.B; system.C system.D],(nx+ny)*(nx+nu),1); reshape(noise.Q,nx*nx,1)];
 Xs = initial.xs;
 finish = 10000;
-start = 1801;
+start = 2001;
 delay = 300;
-% Delay of fan
+% Delay of fan and compressors
 U(start-1:end,1) = U(start-1-delay:end-delay,1);
+U(start-1:end,4) = U(start-1-delay:end-delay,4);
 U(:,12) = 0.2*ones(length(U),1);
 % Parameter estimation
 W = [sigmaValues(1); sigmaValues(2)];
