@@ -11,14 +11,13 @@ function [g,fault,threshold] = myGLR(mu0,var,resid,M,threshold)
 if isstruct(resid)
     resid = resid.Data';
 end
-r = [mu0*ones(M-1,1); resid'];
-g = zeros(length(resid')+M-1,1);
-for k = M:length(r)
+r = [mu0*ones(M,1); resid'];
+g = zeros(length(resid')+M,1);
+for k = M+1:length(r)
     g(k) = 1/(2*var*M)*(sum(r(k-M+1:k)-mu0))^2;
 end
-g = g(M:end);
+g = g(M+1:end);
 if nargin<5
     threshold = 1.1*max(abs(g(1:round(length(g)/5))));
 end
-fault = zeros(length(g),1);
-fault(g>threshold) = 1;
+fault = (g>threshold);

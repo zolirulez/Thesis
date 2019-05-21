@@ -20,5 +20,4 @@ end
 if nargin<5
     threshold = 1.1*max(abs(g(1:round(length(g)/5))));
 end
-fault = zeros(length(g),1);
-fault(g>threshold) = 1;
+fault = g > threshold;

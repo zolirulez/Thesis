@@ -45,7 +45,14 @@ w = DV*sigmaValues(3)*dValues(5)/(W(1) + DV*W(2));
 TBP = CoolProp.PropsSI('T','P',Y(start,1),'H',Y(start,2),'CO2');
 dRc = CoolProp.PropsSI('D','P',Y(start,3),'H',Y(start,4),'CO2');
 d1 = CoolProp.PropsSI('D','P',Y(start,1),'H',Xs(2),'CO2');
-Y(start,6) = [ dRc];
+Y(start,6) = dRc;
+% RLS
+rlsInitial.t = [5000; 6000; 1e3; 1e4; 1e3]*[1 1e-3 10]; 
+rlsInitial.P = diag(max(rlsInitial.t')')/10; 
+rls = RecursiveLeastSquares;
+lambda = 1;
+weight = eye(3);
+rls.initialize(lambda,weight,rlsInitial);
 % Low pass filter for hBP
 hBP = Y(start,2);
 TA0 = U(start,10);
@@ -61,16 +68,30 @@ for it = start:finish
     Xs(3) = d1; % TODO
     Xs(7) = dRc; % TODO
     % ----- Parameter estimation
-    DV = DV*(1-Ts/TauValues(2)) + Ts/TauValues(2)*U(it-1,1)*DVValues(2);
+%     DV = DV*(1-Ts/TauValues(2)) + Ts/TauValues(2)*U(it-1,1)*DVValues(2);
+%     DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
+%     DQ = DmV*(U(it,11) - hBP);
+%     DT = TBP - TA0;
+%     sigma = TauValues(4)/Ts*(DQ/DT - sigma)+ sigma;
+%     res = sigma - [1 DV]*W;
+%     schur = 1 + [1 DV]*P*[1 DV]';
+%     K = P*[1 DV]'/schur ;
+%     W = [sigma*0.2; sigma*0.8/DV] + K*res; % [5000; 6000]
+%     P = P - K*schur*K' + eye(2)/(diag(flip(W))+1e2*eye(2));
+    % Param est again
+    THR = CoolProp.PropsSI('T','H',U(it,11),'P',Y(it,1),'CO2');
+    DmG = U(it-1,4)*VValues(3)*U(it-1,7);
+    CRA = U(it-1,1);
+    DV = CRA*DVValues(2);
     DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
     DQ = DmV*(U(it,11) - hBP);
-    DT = TBP - TA0;
-    sigma = TauValues(4)/Ts*(DQ/DT - sigma)+ sigma;
-    res = sigma - [1 DV]*W;
-    schur = 1 + [1 DV]*P*[1 DV]';
-    K = P*[1 DV]'/schur ;
-    W = [sigma*0.2; sigma*0.8/DV] + K*res; % [5000; 6000]
-    P = P - K*schur*K' + eye(2)/(diag(flip(W))+1e2*eye(2));
+    DT = max(1,TBP - TA0);
+    phi = [1; CRA; TA0; DmG; THR];
+    out = [DQ DT Xs(8)];
+    rls.regression(phi,out);
+%     phiDQ'*thDQ/(phiDT'*thDT) %TODO
+    W = [DQ-phi(2)*rls.t(2)'; rls.t(2)]/DT;
+%     W = (DQ - )/(DT - )rls.t(1:2,1));%rls.t(1:2,1)/(phi'*rls.t(:,2));
     % ----- Set point for new iteration
     UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
     ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
@@ -82,7 +103,7 @@ for it = start:finish
     % Setting the new deviation points
     u = U(it+1,:)' - U(it,:)';
     % Constraints (note: feedback)
-    w = DV*sigmaValues(3)*dValues(5)/(W(1) + DV*W(2));
+%     w = DV*sigmaValues(3)*dValues(5)/(W(1) + DV*W(2));
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
 %     DmMTc = 36e3/(445e3-U(it+1,9))+11e3/(445e3-U(it+1,9));
     dRc = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
