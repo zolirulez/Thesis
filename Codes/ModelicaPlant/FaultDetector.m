@@ -7,12 +7,15 @@ classdef FaultDetector < matlab.mixin.Copyable
         m1  % Fault operation mean
         M   % Window length
         v   % Variance
+        vf  % Faulty variance (for EM)
         h   % Threshold
         rv  % Residual vector (for GLR)
         G   % Gain of sum of squares (for GLR)
         md  % Mean difference
         ma  % Mean average
         mds % Sum of mean differences (for GLR)
+        tau % Responsibility time constant (for EM)
+        Ts  % Sampling time (for EM)
     end
     methods
         function [g,fault] = GLR(fd,z,h)
@@ -38,6 +41,19 @@ classdef FaultDetector < matlab.mixin.Copyable
             g = fd.g;
             fault = g > fd.h;
         end
+        function [g,fault] = EM(fd,z,h)
+            % CUSUM algorithm, for both scalar and vector case
+            if nargin > 2
+                fd.h = h;
+            end
+            gain0 = (1-fd.g+0.01)/sqrt(2*pi*det(fd.v));
+            gain1 = (fd.g+0.01)/sqrt(2*pi*det(fd.vf));
+            r0 = gain0*exp(-0.5*(z-fd.m0)'/fd.v*(z-fd.m0));
+            r1 = gain1*exp(-0.5*(z-fd.m1)'/fd.vf*(z-fd.m1));
+            fd.g = (1-fd.Ts/fd.tau)*fd.g + fd.Ts/fd.tau*r1/(r0 + r1); % pi1
+            g = fd.g;
+            fault = g > fd.h;
+        end
         function initialize(fd,Mean,Variance,Method,FurtherParameters)
             fd.m0 = Mean.m0;
             fd.v = Variance;
@@ -52,6 +68,14 @@ classdef FaultDetector < matlab.mixin.Copyable
                     fd.G = 1/(2*fd.v*fd.M);
                     fd.rv = fd.m0*ones(1,fd.M);
                     fd.mds = sum(fd.rv - fd.m0);
+                case 'EM'
+                    D = length(fd.m0);
+                    fd.g = 0.05;
+                    fd.vf = power(1/FurtherParameters.MeanDensityRatio-1,2/D)*fd.v;
+                    fd.tau = FurtherParameters.ResponsibilityTimeConstant;
+                    fd.Ts = FurtherParameters.SamplingTime;
+                    fd.m1 = fd.m0;
+                    fd.h = 0.5;
                 otherwise
                     warning('Method required is unknown')
             end

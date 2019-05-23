@@ -20,11 +20,19 @@ param.WindowLength = 500;
 param.Threshold = 500;
 method = 'GLR';
 fdGLR.initialize(mean,variance,method,param);
+clear param
 fdCUSUM = FaultDetector;
 mean.m1 = 1.0270e+04;
 param.Threshold = 51.1729;
 method = 'CUSUM';
 fdCUSUM.initialize(mean,variance,method,param);
+clear param
+fdEM = FaultDetector;
+method = 'EM';
+param.MeanDensityRatio = 0.01;
+param.SamplingTime = 1;
+param.ResponsibilityTimeConstant = 100;
+fdEM.initialize(mean,variance,method,param);
 
 % Measurement correction
 % It seems that the expectable detection is around 60 s.
@@ -37,7 +45,7 @@ resrecord = NaN(3,finish-start+1);
 paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
 outrecord = NaN(3,finish-start+1);
 outcorrecord = NaN(3,finish-detectiontime+1);
-grecord = NaN(2,finish-start+1);
+grecord = NaN(3,finish-start+1);
 for it = start:finish
     TA0 = U(it,10);
     THR = CoolProp.PropsSI('T','H',U(it,11),'P',Y(it,1),'CO2');
@@ -58,6 +66,7 @@ for it = start:finish
     end
     fdGLR.GLR(rls.e(3));
     fdCUSUM.CUSUM(rls.e(3));
+    fdEM.EM(rls.e');
 %     res = out - phi'*W;
 %     res = res*diag([1 1 1]);
 %     % RLS
@@ -79,7 +88,7 @@ for it = start:finish
     resrecord(:,it-start+1) = rls.e;
     paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
     outrecord(:,it-start+1) = out';
-    grecord(:,it-start+1) = [fdGLR.g; fdCUSUM.g];
+    grecord(:,it-start+1) = [fdGLR.g; fdCUSUM.g; fdEM.g];
 end
 figure(10)
 subplot(321)
