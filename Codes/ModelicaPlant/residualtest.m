@@ -17,13 +17,17 @@ fdGLR = FaultDetector;
 mean.m0 = 0;
 variance = 1.8614e+06;
 param.WindowLength = 500;
+param.InitialGuess = [1e4,1];
 param.Threshold = 500;
+param.FalseAlarmProbability = 1e-10;
 method = 'GLR';
 fdGLR.initialize(mean,variance,method,param);
 clear param
 fdCUSUM = FaultDetector;
 mean.m1 = 1.0270e+04;
-param.Threshold = 51.1729;
+%param.Threshold = 51.1729;
+param.FalseAlarmTime = 10;
+param.InitialGuess = [1e4,1];
 method = 'CUSUM';
 fdCUSUM.initialize(mean,variance,method,param);
 clear param
@@ -39,13 +43,15 @@ fdEM.initialize(mean,variance,method,param);
 % Choosing safety parameter 5, we take W 300 s before.
 detectiontime = 4060;
 savetime = detectiontime - 300;
+faultOperation = 0;
 
 % Recording
 resrecord = NaN(3,finish-start+1);
 paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
 outrecord = NaN(3,finish-start+1);
-outcorrecord = NaN(3,finish-detectiontime+1);
+outcorrecord = [];
 grecord = NaN(3,finish-start+1);
+faultrecord = NaN(3,finish-start+1);
 for it = start:finish
     TA0 = U(it,10);
     THR = CoolProp.PropsSI('T','H',U(it,11),'P',Y(it,1),'CO2');
@@ -64,31 +70,31 @@ for it = start:finish
     if it == start
         rls.e = [0 0 0];
     end
-    fdGLR.GLR(rls.e(3));
-    fdCUSUM.CUSUM(rls.e(3));
-    fdEM.EM(rls.e');
-%     res = out - phi'*W;
-%     res = res*diag([1 1 1]);
-%     % RLS
-%     lambda = 0.9999;
-%     schur = lambda + phi'*P*phi;
-%     K = P*phi/schur ;
-%     W = W + K*res; 
-%     P = (P - K*schur*K')/lambda;
-    % Measurement correction
-    if it == detectiontime
-        Wsave = reshape(paramrecord(:,savetime-start),length(phi),length(out));
+    [~,fault1] = fdCUSUM.CUSUM(rls.e(3));
+    [~,fault2] = fdGLR.GLR(rls.e(3));
+    [~,fault3] = fdEM.EM(rls.e');
+    % Measurement correction: based on EM fault detector
+    if it > start + 20
+        if sum(faultrecord(3,it-19-start:it-10-start)) < 2 && all(faultrecord(3,it-9-start:it-start))
+            Wsave = reshape(paramrecord(:,it-start),length(phi),length(out));
+            detectiontime = it;
+            faultOperation = 1;
+        end
+        if sum(faultrecord(3,it-19-start:it-10-start)) > 8 && ~any(faultrecord(3,it-9-start:it-start))
+            faultOperation = 0;
+        end
     end
-    if it >= detectiontime
+    if faultOperation
 %         Wp = W'/(W*W'); % right pseudoinverse
 %         outcor = out*Wp*Wsave;
-        outcor = phi'*Wsave; 
-        outcorrecord(:,it-detectiontime+1) = outcor;
+        outcor = phi'*Wsave;
+        outcorrecord = [outcorrecord; outcor];
     end
     resrecord(:,it-start+1) = rls.e;
     paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
     outrecord(:,it-start+1) = out';
-    grecord(:,it-start+1) = [fdGLR.g; fdCUSUM.g; fdEM.g];
+    grecord(:,it-start+1) = [fdCUSUM.g; fdGLR.g; fdEM.g];
+    faultrecord(:,it-start+1) = [fault1; fault2; fault3];
 end
 figure(10)
 subplot(321)
@@ -105,7 +111,7 @@ xlabel('Time [s]')
 ylabel('Normalized weighted residuals')
 legend('DQ','DT','delta_h - used now')
 subplot(313)
-plot(detectiontime:length(outcorrecord)+detectiontime-1,outcorrecord'*diag([1 5e3 1]),...
+plot(detectiontime:length(outcorrecord)+detectiontime-1,diag([1 5e3 1])*outcorrecord',...
     start:finish,outrecord'*diag([1 5e3 1]),...
     [detectiontime detectiontime],[0 1.5e5],'--',...
     [detectiontime-300 detectiontime-300],[0 1.5e5],'--');
@@ -115,8 +121,8 @@ xlabel('Time [s]')
 ylabel('Outputs')
 subplot(322)
 fault = fault_sim.signals.values;
-plot(detectiontime:length(outcorrecord)+detectiontime-1,outrecord(2,detectiontime-start+1:end)-outcorrecord(2,:),...
-    detectiontime:length(outcorrecord)+detectiontime-1,fault(detectiontime+1:end)')
+plot(detectiontime:length(outcorrecord)+detectiontime-1,outrecord(2,detectiontime-start:end)-outcorrecord(:,2)',...
+    4000:finish,fault(4000:end-1)')
 xlabel('Time [s]')
 ylabel('Fault estimation [K]')
 legend('Estimated fault','True fault')
@@ -168,15 +174,15 @@ resid_normal = [0 resid(1,2:2000)];
 var_resid = var(resid_normal);
 % --------------- Detection ----------------------
 % 3 month = 3*30 days = 3*30*24 hours = 3*30*24*3600 seconds
-mu0 = 0;
-mu1 = 1e4;
-FalseAlarmTime = 10;
-initialguess = [mu1; 1];
-mu1_threshold_vector = fsolve('myARL4fsolve',initialguess);
-mu1 = mu1_threshold_vector(1)
-threshold = mu1_threshold_vector(2)
-[Tdetect, Tfalse] = myARL(mu1,mu0,var_resid,threshold)
-[g,fault,threshold] = myCusum(mu1,mu0,var_resid,resid,threshold);
+% mu0 = 0;
+% mu1 = 1e4;
+% FalseAlarmTime = 10;
+% initialguess = [mu1; 1];
+% mu1_threshold_vector = fsolve('myARL4fsolve',initialguess);
+% mu1 = mu1_threshold_vector(1)
+% threshold = mu1_threshold_vector(2)
+% [Tdetect, Tfalse] = myARL(mu1,mu0,var_resid,threshold);
+% [g,fault,threshold] = myCusum(mu1,mu0,var_resid,resid,threshold);
 figure(7)
 subplot(311)
 plot(start:finish,resid')
@@ -185,42 +191,41 @@ ylabel('Residual')
 xlabel('Time [s]')
 ylim([-2e4 2e4])
 subplot(334)
-plot(start:finish,g',start:finish,threshold*rectwin(length(resid)),'r--')
+plot(start:finish,grecord(1,:)',start:finish,fdCUSUM.h*rectwin(length(resid)),'r--')
 ylabel('g function')
 xlabel('Time [s]')
 title('CUSUM')
 subplot(337)
-plot(start:finish,fault','LineWidth',2)
+plot(start:finish,grecord(1,:)'>fdCUSUM.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
 % GLR
-threshold = 500;
-M = 500;
-[Pmissed, Pfalse] = GLR_design(M, mu1,mu0,sqrt(var_resid),threshold,0)
-[g,fault] = myGLR(mu0,var_resid,resid,M,threshold);
+% threshold = 500;
+% M = 500;
+% [Pmissed, Pfalse] = GLR_design(M, mu1,mu0,sqrt(var_resid),threshold,0)
+% [g,fault] = myGLR(mu0,var_resid,resid,M,threshold);
 figure(7)
 subplot(335)
-plot(start:finish,g',start:finish,threshold*rectwin(length(resid)),'r--')
-ylim([0 threshold*10])
+plot(start:finish,grecord(2,:)',start:finish,fdGLR.h*rectwin(length(resid)),'r--')
+ylim([0 fdGLR.h*10])
 ylabel('g function')
 xlabel('Time [s]')
 title('GLR')
 subplot(338)
-plot(start:finish,fault','LineWidth',2)
+plot(start:finish,grecord(2,:)'>fdGLR.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
 % Moving square change detection
 figure(7)
 M = 500;
-[g,fault,t,threshold] = MSCD(resid,M);
+% [g,fault,t,threshold] = MSCD(resid,M);
 subplot(336)
-plot(t+start,g',t+start,threshold*rectwin(length(resid)-M),'r--')
-ylim([0 threshold*10])
-ylabel('Autocorrelation')
+plot(start:finish,grecord(3,:)',start:finish,fdEM.h*rectwin(length(resid)),'r--')
+ylabel('g function')
 xlabel('Time [s]')
-title('Moving Square Change Detector')
+title('Expectation Maximization (multidim.)')
 subplot(339)
-plot(t+start,fault','LineWidth',2)
+plot(start:finish,grecord(3,:)'>fdEM.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
 

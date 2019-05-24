@@ -1,5 +1,5 @@
 function sketch4em(resid,LR,var0,tau,Ts)
-% usage: sketch4em(testresid,0.999,var(resid_normal),100,1)
+% usage: sketch4em(testresid,0.01,variance,10,1)
 % tau: responsibility dynamics
 % Ts: sampling time
 % var0: variance of normal residual

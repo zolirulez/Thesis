@@ -7,15 +7,22 @@ classdef FaultDetector < matlab.mixin.Copyable
         m1  % Fault operation mean
         M   % Window length
         v   % Variance
-        vf  % Faulty variance (for EM)
         h   % Threshold
-        rv  % Residual vector (for GLR)
-        G   % Gain of sum of squares (for GLR)
-        md  % Mean difference
-        ma  % Mean average
-        mds % Sum of mean differences (for GLR)
+        % Expectation Maximization
+        vf  % Faulty variance (for EM)
         tau % Responsibility time constant (for EM)
         Ts  % Sampling time (for EM)
+        % Generalized Likelihood Ratio
+        rv  % Residual vector 
+        G   % Gain of sum of squares
+        mds % Sum of mean differences
+        Pfalse      % Probability of false alarm
+        Pmissed     % Probability of missed detection
+        % CUSUM
+        md  % Mean difference
+        ma  % Mean average
+        Tdetect     % Average time of detection
+        Tfalse      % Average time of false alarm
     end
     methods
         function [g,fault] = GLR(fd,z,h)
@@ -86,51 +93,86 @@ classdef FaultDetector < matlab.mixin.Copyable
             end
         end
         function thresholdInitialization(fd,Method,FurtherParameters)
-            % Let M be window size
-            % lambda is the non-centrality parameter in the non central
-            % Chi square distribution, see (7.39).
-            % The GLRT has the test statistic given by (7.35)
-            % where z(i) is Normal with mean mu_1 and variance sigma^2.
-            %
-            % g(k) = 1/(2*sigma^2*M)* (sum(i=k-M+1,k)(z(i)-mu_0))^2
-            % the noncentrality parameter for the distribution of 2*g_M is (7.39):
             switch Method
                 case 'GLR'
+                    fd.Pfalse = FurtherParameters.FalseAlarmProbability;
+                    InitialGuess = FurtherParameters.InitialGuess;
+                    m1_h = fsolve(@fd.GLRdesign4fsolve,InitialGuess);
+                    fd.m1 = m1_h(1);
+                    fd.h = m1_h(2);
+                    fd.GLRdesign;
                 case 'CUSUM'
+                    fd.Tfalse = FurtherParameters.FalseAlarmTime;
+                    InitialGuess = FurtherParameters.InitialGuess;
+                    m1_h = fsolve(@fd.ARL4fsolve,InitialGuess);
+                    fd.m1 = m1_h(1);
+                    fd.h = m1_h(2);
+                    fd.ARL;
             end
-
-%             % range for g(k)
-% %             g = 0:0.1:15;
-%             %Under H0:
-%             dof = 1;
-%             pdfH0 = chi2pdf(2*g,dof);
-%             cdfH0 = chi2cdf(2*g,dof);
-%             
-%             %Under H1:
-%             dof = 1;
-%             lambda = fd.M *(mu_1-mu_0)^2/sigma^2;
-%             pdfH1 = ncx2pdf(2*g,dof,lambda);
-%             cdfH1 = ncx2cdf(2*g,dof,lambda);
-%             
-%             % choose threshold h (threshold for 2*g is 2*h !!)
-%             
-%             h = threshold;
-%             % compute PF and PD:
-%             PF = 1 - chi2cdf(2*h, dof);
-%             PD = 1 - ncx2cdf(2*h, dof,lambda);
-%             
-%             nullh  = [0:0.1:2*h];
-%             PFline = (1-PF)*ones(size(nullh));
-%             PDline = (1-PD)*ones(size(nullh));
-%             
-%             hrangep = [0:0.1:0.3];
-%             hlinep  = 2*h*ones(size(hrangep));
-%             hrangec = [0:0.1:1];
-%             hlinec  = 2*h*ones(size(hrangec));
-%             
-%             % Returns
-%             Pmissed = 1 - PD;
-%             Pfalse = PF;
+        end
+        function resid = ARL4fsolve(fd,m1_h)
+            % Input demux
+            m1 = m1_h(1);
+            h = m1_h(2);
+            FalseAlarmTime = fd.Tfalse;
+            % ARL function
+            sigs = sqrt((m1-fd.m0)^2/fd.v);
+            mus = sqrt((m1-fd.m0)^2/(2*fd.v));
+            L = @(mus,sigs,h)(sigs^2/2/mus^2*...
+                (exp(-2*(mus*h/sigs^2+1.166*mus/sigs))-1+2*(mus*h/sigs^2+1.166*mus/sigs)));
+            Tdetect = L(mus^2,sigs^2,h);
+            Tfalse = L(-mus^2,sigs^2,h);
+            % Checking how close we are to the solution
+            detectresid = Tdetect;
+            falseresid = Tfalse - FalseAlarmTime;
+            resid = [detectresid; falseresid];
+        end
+        function [Tdetect,Tfalse] = ARL(fd)
+            sigs = sqrt((fd.m1-fd.m0)^2/fd.v);
+            mus = sqrt((fd.m1-fd.m0)^2/2/fd.v);
+            L = @(mus,sigs,h)(sigs^2/2/mus^2*...
+                (exp(-2*(mus*h/sigs^2+1.166*mus/sigs))-1+2*(mus*h/sigs^2+1.166*mus/sigs)));
+            fd.Tdetect = L(mus,sigs,fd.h);
+            fd.Tfalse = L(-mus,sigs,fd.h);
+            Tdetect = fd.Tdetect;
+            Tfalse = fd.Tfalse;
+        end
+        function resid = GLRdesign4fsolve(fd,m1_h)
+            % Input demux
+            m1 = m1_h(1);
+            h = m1_h(2);
+            FalseAlarmProbability = fd.Pfalse;
+            %Under H0:
+            dof = 1;
+            %Under H1:
+            dof = 1;
+            lambda = fd.M *(m1-fd.m0)^2/fd.v;
+            % choose threshold h (threshold for 2*g is 2*h !!)
+            % compute PF and PD:
+            PF = 1 - chi2cdf(2*h, dof);
+            PD = 1 - ncx2cdf(2*h, dof,lambda);
+            % Returns
+            Pmissed = 1 - PD;
+            Pfalse = PF;
+            residMissed = Pmissed;
+            residFalse = Pfalse - FalseAlarmProbability;
+            resid = [residMissed; residFalse];
+        end
+        function [Pmissed, Pfalse] = GLRdesign(fd)
+            %Under H0:
+            dof = 1;
+            %Under H1:
+            dof = 1;
+            lambda = fd.M *(fd.m1-fd.m0)^2/fd.v;
+            % choose threshold h (threshold for 2*g is 2*h !!)
+            % compute PF and PD:
+            PF = 1 - chi2cdf(2*fd.h, dof);
+            PD = 1 - ncx2cdf(2*fd.h, dof,lambda);
+            % Returns
+            fd.Pmissed = 1 - PD;
+            fd.Pfalse = PF;
+            Pmissed = fd.Pmissed;
+            Pfalse = fd.Pfalse;
         end
     end
 end
