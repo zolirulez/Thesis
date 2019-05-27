@@ -53,32 +53,55 @@ rls = RecursiveLeastSquares;
 lambda = 1;
 weight = eye(3);
 rls.initialize(lambda,weight,rlsInitial);
-% Low pass filter for hBP
+% Fault Detector
+fdGLR = FaultDetector;
+mean.m0 = 0;
+variance = 1.8614e+06;
+param.WindowLength = 500;
+param.InitialGuess = [1e4,1];
+param.Threshold = 500;
+param.FalseAlarmProbability = 1e-10;
+method = 'GLR';
+fdGLR.initialize(mean,variance,method,param);
+clear param
+fdCUSUM = FaultDetector;
+mean.m1 = 1.0270e+04;
+%param.Threshold = 51.1729;
+param.FalseAlarmTime = 10;
+param.InitialGuess = [1e4,1];
+method = 'CUSUM';
+fdCUSUM.initialize(mean,variance,method,param);
+clear param
+fdEM = FaultDetector;
+method = 'EM';
+param.MeanDensityRatio = 0.01;
+param.SamplingTime = 1;
+param.ResponsibilityTimeConstant = 100;
+fdEM.initialize(mean,variance,method,param);
+% Boolean for fault operation
+faultOperation = 0;
+% Low pass filter
 hBP = Y(start,2);
 TA0 = U(start,10);
 T1 = Y(start,6);
+% Recording
 record = NaN(nx+nx+nx+ny+nw,finish-start+1);
+resrecord = NaN(3,finish-start+1);
+paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
+outrecord = NaN(3,finish-start+1);
+outcorrecord = [];
+grecord = NaN(3,finish-start+1);
+faultrecord = NaN(3,finish-start+1);
 for it = start:finish
     if ~rem(it,100)
         disp(['Iteration ' num2str(it)])
     end
-    % ----- Estimation based on delayed parameters
+    % ------------ State estimation -----------
     xf = kf.markovPredictor(uy(1:nu),uy(nu+1:nu+ny),reshape(uy(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uy(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uy(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     Xs = kf.x1 + Xs;
     Xs(3) = d1; % TODO
     Xs(7) = dRc; % TODO
-    % ----- Parameter estimation
-%     DV = DV*(1-Ts/TauValues(2)) + Ts/TauValues(2)*U(it-1,1)*DVValues(2);
-%     DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
-%     DQ = DmV*(U(it,11) - hBP);
-%     DT = TBP - TA0;
-%     sigma = TauValues(4)/Ts*(DQ/DT - sigma)+ sigma;
-%     res = sigma - [1 DV]*W;
-%     schur = 1 + [1 DV]*P*[1 DV]';
-%     K = P*[1 DV]'/schur ;
-%     W = [sigma*0.2; sigma*0.8/DV] + K*res; % [5000; 6000]
-%     P = P - K*schur*K' + eye(2)/(diag(flip(W))+1e2*eye(2));
-    % Param est again
+    % ------------ Parameter estimation -----------
     THR = CoolProp.PropsSI('T','H',U(it,11),'P',Y(it,1),'CO2');
     DmG = U(it-1,4)*VValues(3)*U(it-1,7);
     CRA = U(it-1,1);
@@ -89,10 +112,30 @@ for it = start:finish
     phi = [1; CRA; TA0; DmG; THR];
     out = [DQ DT Xs(8)];
     rls.regression(phi,out);
-%     phiDQ'*thDQ/(phiDT'*thDT) %TODO
     W = [DQ-phi(2)*rls.t(2)'; rls.t(2)]/DT;
-%     W = (DQ - )/(DT - )rls.t(1:2,1));%rls.t(1:2,1)/(phi'*rls.t(:,2));
-    % ----- Set point for new iteration
+    % ------------ Fault Operation -----------
+    if it == start
+        rls.e = zeros(1,3);
+    end
+    [~,fault1] = fdCUSUM.CUSUM(rls.e(3));
+    [~,fault2] = fdGLR.GLR(rls.e(3));
+    [~,fault3] = fdEM.EM(rls.e');
+    % Measurement correction: based on CUSUM
+    if it > start + 20
+        if sum(faultrecord(1,it-19-start:it-10-start)) < 2 && all(faultrecord(1,it-9-start:it-start))
+            Wsave = reshape(paramrecord(:,it-start),length(phi),length(out));
+            detectiontime = it;
+            faultOperation = 1;
+        end
+        if sum(faultrecord(1,it-19-start:it-10-start)) > 8 && ~any(faultrecord(1,it-9-start:it-start))
+            faultOperation = 0;
+        end
+    end
+    if faultOperation
+        outcor = phi'*Wsave;
+        outcorrecord = [outcorrecord; outcor];
+    end
+    % ------------ Parameter substitutions for new iteration -----------
     UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
     ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
     A = ABCDQ(1:nx*nx);
@@ -100,12 +143,8 @@ for it = start:finish
     C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
     D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
     Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
-    % Setting the new deviation points
-    u = U(it+1,:)' - U(it,:)';
-    % Constraints (note: feedback)
-%     w = DV*sigmaValues(3)*dValues(5)/(W(1) + DV*W(2));
+    % ------------ Constraints -----------
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
-%     DmMTc = 36e3/(445e3-U(it+1,9))+11e3/(445e3-U(it+1,9));
     dRc = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
     d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Xs(2),'CO2');
     Y(it+1,5) = [dRc];
@@ -117,13 +156,20 @@ for it = start:finish
     Y(it+1,2) = hBP;
     U(it+1,10) = TA0;
     Y(it+1,6) = T1 - (TBP - TA0);
+    % ------------ New setpoint for linearization -----------
+    u = U(it+1,:)' - U(it,:)';
     y = Y(it+1,1:ny)' - g(gFunction,XFunction,Xs,UFunction,U(it,:));
     kf.x1 = zeros(nx,1);
     uy = [u; y; A; B; C; D; Q];
-    % Recording
+    % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     eigP1 = eig(kf.P1);
     record(:,it-start+1) = [Xs; eigP1; statecorrection; kf.e; W];
+    resrecord(:,it-start+1) = rls.e;
+    paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
+    outrecord(:,it-start+1) = out';
+    grecord(:,it-start+1) = [fdCUSUM.g; fdGLR.g; fdEM.g];
+    faultrecord(:,it-start+1) = [fault1; fault2; fault3];
 end
 
 
