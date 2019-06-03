@@ -5,37 +5,39 @@ addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\detection')
 delta_h = record(8,:);
 % Note: dont start it before 350, because of the delay operations
 start = 2001;
-rlsInitial.t = [5000; 6000; 1e3; 1e4; 1e3]*[1 1e-3 10]; 
+rlsInitial.t = [5000; 6000; 1e3; 1e4; 1e3]*[1 1e-3]; % 10
 rlsInitial.P = diag(max(rlsInitial.t')')/10; 
 rls = RecursiveLeastSquares;
 lambda = 1;
-weight = eye(3);
+weight = eye(2);
 rls.initialize(lambda,weight,rlsInitial);
 
 % Fault Detector
 fdGLR = FaultDetector;
 mean.m0 = 0;
-variance = 1.8614e+06;
+variance = 0.25; %1.8614e+06;
 param.WindowLength = 500;
-param.InitialGuess = [1e4,1];
-param.Threshold = 500;
-param.FalseAlarmProbability = 1e-10;
+param.InitialGuess = [-1,1];
+% param.Threshold = 500;
+param.FalseAlarmProbability = 0*1e-20;
 method = 'GLR';
 fdGLR.initialize(mean,variance,method,param);
 clear param
 fdCUSUM = FaultDetector;
-mean.m1 = 1.0270e+04;
+mean.m1 = -1;%1.0270e+04;
 %param.Threshold = 51.1729;
-param.FalseAlarmTime = 10;
-param.InitialGuess = [1e4,1];
+param.FalseAlarmTime = 1e20;
+param.InitialGuess = [mean.m1,1];
 method = 'CUSUM';
 fdCUSUM.initialize(mean,variance,method,param);
 clear param
 fdEM = FaultDetector;
 method = 'EM';
-param.MeanDensityRatio = 0.01;
+param.MeanDensityRatio = 0.1;
 param.SamplingTime = 1;
 param.ResponsibilityTimeConstant = 100;
+mean.m0 = zeros(2,1);
+variance = diag([4.25e6 0.25]);
 fdEM.initialize(mean,variance,method,param);
 
 % Measurement correction
@@ -46,9 +48,9 @@ savetime = detectiontime - 300;
 faultOperation = 0;
 
 % Recording
-resrecord = NaN(3,finish-start+1);
+resrecord = NaN(2,finish-start+1);
 paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
-outrecord = NaN(3,finish-start+1);
+outrecord = NaN(2,finish-start+1);
 outcorrecord = [];
 grecord = NaN(3,finish-start+1);
 faultrecord = NaN(3,finish-start+1);
@@ -65,13 +67,13 @@ for it = start:finish
     DT = max(1,TBP - TA0);
     sigma = DQ/DT;
     phi = [1; CRA; TA0; DmG; THR];
-    out = [DQ DT delta_h(it-start+1)];
+    out = [DQ DT];
     rls.regression(phi,out);
     if it == start
-        rls.e = [0 0 0];
+        rls.e = [0 0];
     end
-    [~,fault1] = fdCUSUM.CUSUM(rls.e(3));
-    [~,fault2] = fdGLR.GLR(rls.e(3));
+    [~,fault1] = fdCUSUM.CUSUM(rls.e(2));
+    [~,fault2] = fdGLR.GLR(rls.e(2));
     [~,fault3] = fdEM.EM(rls.e');
     % Measurement correction: based on EM fault detector
     if it > start + 20
@@ -109,25 +111,29 @@ grid on
 ylim([-5 1])
 xlabel('Time [s]')
 ylabel('Normalized weighted residuals')
-legend('DQ','DT','delta_h - used now')
+legend('DQ','DT - used now')
 subplot(313)
-plot(detectiontime:length(outcorrecord)+detectiontime-1,diag([1 5e3 1])*outcorrecord',...
-    start:finish,outrecord'*diag([1 5e3 1]),...
+plot(detectiontime:length(outcorrecord)+detectiontime-1,diag([1 5e3])*outcorrecord',...
+    start:finish,outrecord'*diag([1 5e3]),...
     [detectiontime detectiontime],[0 1.5e5],'--',...
     [detectiontime-300 detectiontime-300],[0 1.5e5],'--');
-legend('Reestimated DQ','Reestimated DT*5e3','Reestimated delta_h',...
-    'Faulty DQ','Faulty DT*5e3','Faulty delta_h','Estimated detection time','Parameter sampling')
+legend('Reestimated DQ','Reestimated DT*5e3',...
+    'Faulty DQ','Faulty DT*5e3','Estimated detection time','Parameter sampling')
 xlabel('Time [s]')
 ylabel('Outputs')
 subplot(322)
 fault = fault_sim.signals.values;
+try
 plot(detectiontime:length(outcorrecord)+detectiontime-1,outrecord(2,detectiontime-start:end)-outcorrecord(:,2)',...
     4000:finish,fault(4000:end-1)')
+catch
+    warning('No fault plot')
+end
 xlabel('Time [s]')
 ylabel('Fault estimation [K]')
 legend('Estimated fault','True fault')
 %% Residual
-global var_resid FalseAlarmTime
+global var_resid
 resid = resrecord(end,:);
 resid(1) = 0;
 figure(5)

@@ -1,4 +1,4 @@
-classdef KalmanFilter < handle
+classdef KalmanFilter < matlab.mixin.Copyable
     % This Kalman filter is an object for solving general computations
     %   required by a Kalman Filter. Note that the object does not work
     %   like a single function, therefore for different applications
