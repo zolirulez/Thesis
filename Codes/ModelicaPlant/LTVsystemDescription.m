@@ -30,7 +30,7 @@ d1Value = x(3);
 TA1Value = x(4);
 pRValue = y(3);
 hRValue = y(4);
-dRValue = y(6);
+dRValue = x(7);
 delta_hValue = x(8);
 % Tables
 p1idx = max(1,[find(p1Value < Pbig)-1 51]);

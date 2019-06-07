@@ -57,7 +57,7 @@ legend('h_B_P','h_R')
 xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 subplot(3,3,9)
-plot(t,record(nx+nx+nx+6,:))
+plot(t,record(nx+nx+nx+5,:))
 legend('T_A_1')
 xlabel('Time [s]')
 ylabel('Innovation [K]')
@@ -124,7 +124,7 @@ legend('h_B_P','h_R')
 xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 subplot(3,3,9)
-plot(t,recordf(nx+nx+nx+6,:))
+plot(t,recordf(nx+nx+nx+5,:))
 legend('T_A_1')
 xlabel('Time [s]')
 ylabel('Innovation [K]')
@@ -171,7 +171,7 @@ legend('Estimated fault','True fault')
 global var_resid FalseAlarmTime
 resid = resrecord(end,:);
 resid(1) = 0;
-figure(5)
+figure(11)
 resid_normal = [0 resid(1,2:2000)];
 subplot(221)
 autocorr(resid_normal)
@@ -188,7 +188,7 @@ subplot(224)
 var_resid1 = var(resid_normal);
 histfit(resid_normal,50)
 title(['Histogram of data with variance ' num2str(var_resid1)])
-figure(6)
+figure(12)
 wcn = 0.2;
 [Bpol,Apol] = butter(1,wcn,'high');
 resid2 = filter(Bpol,Apol,resid);
@@ -214,7 +214,7 @@ title(['Histogram of data with variance ' num2str(var_resid2)])
 % resid_normal = [0 resid(1,2:2000)];
 % var_resid = var(resid_normal);
 % --------------- Detection ----------------------
-figure(7)
+figure(13)
 subplot(311)
 plot(start:finish,resid')
 grid on
@@ -230,7 +230,6 @@ plot(start:finish,grecord(1,:)'>fdCUSUM.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
 % GLR
-figure(7)
 subplot(335)
 plot(start:finish,grecord(2,:)',start:finish,fdGLR.h*rectwin(length(resid)),'r--')
 ylim([0 fdGLR.h*10])
@@ -242,7 +241,6 @@ plot(start:finish,grecord(2,:)'>fdGLR.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
 % EM
-figure(7)
 M = 500;
 subplot(336)
 plot(start:finish,grecord(3,:)',start:finish,fdEM.h*rectwin(length(resid)),'r--')

@@ -1,4 +1,4 @@
-classdef RecursiveLeastSquares < handle
+classdef RecursiveLeastSquares < matlab.mixin.Copyable
     % This Recursive Least Squares is an object for solving general
     %   computations required by an RLS algorithm. 
     properties
