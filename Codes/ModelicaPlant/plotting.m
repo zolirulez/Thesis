@@ -68,66 +68,87 @@ legend('s_0','k')
 xlabel('Time [s]')
 ylabel('Parameters')
 
-figure(4)
-clf
+figure(1)
+load hcw
 subplot(221)
 hold on
-plot(t,recordf(1,:)/1e5)
-plot(t,recordf(5,:)/1e5)
+plot(t,recordf(1,:)/1e5,'--')
+plot(t,recordf(5,:)/1e5,'--')
 hold off
 ylim([30 100])
 xlabel('Time [s]')
 ylabel('Pressure [bar]')
 subplot(222)
 hold on
-plot(t,recordf(2,:)/1000)
-plot(t,recordf(6,:)/1000)
-plot(t,recordf(8,:)/1000)
+plot(t,recordf(2,:)/1000,'--')
+plot(t,recordf(6,:)/1000,'--')
+plot(t,recordf(8,:)/1000,'--')
+if it == finish
+    plot(t,hcw(start:finish)/1000,'--')
+end
 hold off
 ylim([-50 600])
 xlabel('Time [s]')
 ylabel('Enthalpy [kJ/kg]')
 subplot(223)
 hold on
-plot(t,recordf(4,:)-273.15)
+plot(t,recordf(4,:)-273.15,'--')
 hold off
 ylim([-10 120])
 xlabel('Time [s]')
 ylabel('Temperature [C]')
 subplot(224)
 hold on
-plot(t,recordf(3,:))
-plot(t,recordf(7,:))
+plot(t,recordf(3,:),'--')
+plot(t,recordf(7,:),'--')
 hold off
 ylim([0 900])
 xlabel('Time [s]')
 ylabel('Density [kg/m^3]')
 
-figure(5)
+figure(2)
 subplot(311)
-plot(t,recordf(nx+1:nx+nx,:))
+hold on
+plot(t,recordf(nx+1:nx+nx,:),'--')
+hold off
 xlabel('Time [s]')
 ylabel('Eigenvalues of P_1')
 subplot(312)
-plot(t,recordf(nx+nx+1:nx+nx+nx,:))
+hold on
+plot(t,recordf(nx+nx+1:nx+nx+nx,:),'--')
+hold off
 xlabel('Time [s]')
 ylabel('State correction of K_xe')
 legend('p1','h1','d1','TA1','pR','hR','dR','delta_h');
 subplot(3,3,7)
-plot(t,recordf(nx+nx+nx+1,:)/1e5,t,record(nx+nx+nx+3,:)/1e5)
+hold on
+plot(t,recordf(nx+nx+nx+1,:)/1e5,t,record(nx+nx+nx+3,:)/1e5,'--')
+hold off
 legend('p_1','p_R')
 xlabel('Time [s]')
 ylabel('Innovation [bar]')
 subplot(3,3,8)
-plot(t,recordf(nx+nx+nx+2,:)/1e3,t,record(nx+nx+nx+4,:)/1e3)
+hold on
+plot(t,recordf(nx+nx+nx+2,:)/1e3,t,record(nx+nx+nx+4,:)/1e3,'--')
+hold off
 legend('h_B_P','h_R')
 xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 subplot(3,3,9)
-plot(t,recordf(nx+nx+nx+5,:))
+hold on
+plot(t,recordf(nx+nx+nx+5,:),'--')
+hold off
 legend('T_A_1')
 xlabel('Time [s]')
 ylabel('Innovation [K]')
+
+figure(3)
+hold on
+plot(t,recordf(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:),'--')
+hold off
+legend('s_0','k')
+xlabel('Time [s]')
+ylabel('Parameters')
 
 figure(10)
 subplot(321)

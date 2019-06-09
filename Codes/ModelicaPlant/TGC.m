@@ -1,5 +1,5 @@
 clearvars
-load h1_sim_chaos
+load h1_sim_faulty
 start = 1800;
 Y = h1_sim.signals.values;
 t = h1_sim.time(start:end,:);
@@ -22,12 +22,16 @@ for it = 1:length(Y)
         dc(it,it2-4) = CoolProp.PropsSI('D','P',Y(it,1),'H',Y(it,it2),'CO2');
     end
     Tcw = [Tcw; Tc(it,:)*dc(it,:)'/sum(dc(it,:))];
-    hcw(it,it2-4) = CoolProp.PropsSI('H','P',Y(it,1),'T',Tcw(end),'CO2');
+    hcw(it,1) = CoolProp.PropsSI('H','P',Y(it,1),'T',Tcw(end),'CO2');
 end
 %%
-THRd = THR;
-delay = 350;
+load uy_sim_faulty
+U = uy_sim.signals.values(:,1:nu); 
+Y = uy_sim.signals.values(:,nu+1:nu+ny); 
+delay = 500;
 THRd = THR(start-delay:end-delay);
+CRA = U(start:end,1);
+CRIT = U(start:end,4);
 figure(5)
 subplot(211)
 plot(t,THRd-273,t,TBP(start:end)-273,t,TA0(start:end)-273,t,Tcw(start:end)-273)
@@ -39,11 +43,21 @@ plot(t,Tc(start:end,:)-273)
 xlabel('Time [s]')
 ylabel('Cell temperatures [C]')
 figure(6)
-[c,lags] = xcov(Tcw(start:end),THR(start:end));
-plot(lags,c)
-title('Cross covariance between THR and Tcw')
+[c1,lags] = xcov(Tcw(start:end),THR(start:end));
+[c2,~] = xcov(Tcw(start:end),CRIT);
+[c3,~] = xcov(Tcw(start:end),TA0(start:end));
+[c4,~] = xcov(Tcw(start:end),CRA);
+clf
+hold on
+plot(lags,-c1)
+plot(lags,-c2)
+plot(lags,-c3)
+plot(lags,-c4)
+hold off
+title('Cross covariances')
 xlabel('Lag [s]')
-X = [ones(length(THRd),1) THRd TA0(start:end)];
+grid on
+X = [ones(length(THRd),1) THRd TA0(start:end) CRIT CRA];
 Y = Tcw(start:end);
 P = (X'*X)\X'*Y;
 max(abs(Y-X*P))
