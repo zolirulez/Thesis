@@ -237,7 +237,7 @@ title(['Histogram of data with variance ' num2str(var_resid2)])
 % --------------- Detection ----------------------
 figure(13)
 subplot(311)
-plot(start:finish,resid')
+plot(start:finish,(resrecord./max(resrecord(:,5:end)')')')
 grid on
 ylabel('Residual')
 xlabel('Time [s]')

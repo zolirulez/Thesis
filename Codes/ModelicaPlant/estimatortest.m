@@ -27,10 +27,11 @@ ABCDQ = [reshape([system.A system.B; system.C system.D],(nx+ny)*(nx+nu),1); resh
 Xs = initial.xs;
 finish = 10000;
 start = 2001;
-delay = 500;
+delay = 200;
 % Delay of fan and compressors
-U(start-1:end,1) = U(start-1-delay:end-delay,1);
-U(start-1:end,4) = U(start-1-delay:end-delay,4);
+% U(start-1:end,4) = U(start-1-delay:end-delay,4);
+% U(start-1:end,10) = U(start-1-delay:end-delay,10);
+% U(start-1:end,11) = U(start-1-delay:end-delay,11);
 U(:,12) = 0.2*ones(length(U),1);
 % Parameter estimation
 W = [sigmaValues(1); sigmaValues(2)];
@@ -47,7 +48,7 @@ d1 = CoolProp.PropsSI('D','P',Y(start,1),'H',Xs(2),'CO2');
 rlsInitial.t = [5000; 6000; 1e3; 1e4; 1e3]*[1 1e-3];  % 10
 rlsInitial.P = diag(max(rlsInitial.t')')/10; 
 rls = RecursiveLeastSquares;
-lambda = 0.9999;
+lambda = 1 - 1e-5;
 weight = eye(2);
 rls.initialize(lambda,weight,rlsInitial);
 rlsf = copy(rls);
@@ -70,7 +71,7 @@ fdCUSUM.initialize(mean,variance,method,param);
 clear param
 fdEM = FaultDetector;
 method = 'EM';
-param.MeanDensityRatio = 0.01;
+param.MeanDensityRatio = 0.005;
 param.SamplingTime = 1;
 param.ResponsibilityTimeConstant = 100;
 variance = diag([4.25e6; 0.25]);
@@ -81,7 +82,7 @@ faultOperation = 0;
 % Low pass filter
 hBP = Y(start,2);
 TA0 = U(start,10);
-T1 = Y(start,5);
+h1 = Y(start,5);
 dBP = U(start,6);
 Tfault = 0;
 % Recording
@@ -99,7 +100,7 @@ Yf = Y;
 uyf = uy;
 ABCDQf = ABCDQ;
 hBPf = Yf(start,2);
-T1f = Yf(start,5);
+h1f = Yf(start,5);
 d1f = d1;
 detectiontime = 0;
 recordf = record;
@@ -117,15 +118,19 @@ for it = start:finish
     Xsf(3) = d1f; % TODO
     Xsf(7) = dR; % TODO
     % ------------ Parameter estimation -----------
-    THR = CoolProp.PropsSI('T','H',U(it,11),'P',Y(it,1),'CO2');
-    DmG = U(it-1,4)*VValues(3)*U(it-1,7);
+    % Delayed THR!
+    THR = CoolProp.PropsSI('T','H',U(it-delay,11),'P',Y(it-delay,1),'CO2');
+    CRIT = U(it-1,4);
     CRA = U(it-1,1);
+    dBP = U(it+1,6);
     DmV = U(it,3)*KvValues*sqrt(dBP*(Y(it,1) - Y(it,3)));
-    DQ = DmV*(U(it,11) - hBP);
-    DQf = DmV*(U(it,11) - hBPf);
-    DT = TBP - TA0;
-    DTf = TBPf - TA0;
-    phi = [1; CRA; TA0; DmG; THR];
+    % Delayed hHR!
+    DQ = DmV*(U(it-delay,11) - Y(it,2));
+    DQf = DmV*(U(it-delay,11) - Yf(it,2));
+    TA0 = U(it+1,10);
+    DT = max(1,TBP - TA0);
+    DTf = max(1,TBPf - TA0);
+    phi = [1; CRA; TA0; CRIT; THR];
     out = [DQ DT]; % Xs(8)
     outf = [DQf DTf];
     rls.regression(phi,out);
@@ -135,9 +140,9 @@ for it = start:finish
     % ------------ Fault Operation -----------
     if it == start
         rls.e = zeros(1,length(rls.e));
+        [~,fault1] = fdCUSUM.CUSUM(rls.e(2)); % TODO: wrong place
+        [~,fault2] = fdGLR.GLR(rls.e(2)); % TODO: wrong place
     end
-    [~,fault1] = fdCUSUM.CUSUM(rls.e(2));
-    [~,fault2] = fdGLR.GLR(rls.e(2));
     [~,fault3] = fdEM.EM(rls.e');
     % Measurement correction: based on CUSUM
     if it > start + 20
@@ -176,26 +181,25 @@ for it = start:finish
     Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
     % ------------ Constraints -----------
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
-    TBPf = TBP - Tfault;
     dR = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
-    d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Xs(2),'CO2');
-    d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Xsf(2),'CO2');
+    d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,5),'CO2');
     % In case of a fault
+    TBPf = TBP - Tfault;
     Yf(it+1,2) = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
+    d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
     % Low pass filters for noisy measurements
-    TauNoise = 1;
-    hBP = hBP*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,2);
-    hBPf = hBPf*(1-Ts/TauNoise) + Ts/TauNoise*Yf(it+1,2);
-    TA0 = TA0*(1-Ts/TauNoise) + Ts/TauNoise*U(it+1,10);
-    T1 = T1*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,5);
-    T1f = T1f*(1-Ts/TauNoise) + Ts/TauNoise*Yf(it+1,5);
-    Y(it+1,2) = hBP;
-    Yf(it+1,2) = hBPf;
-    U(it+1,10) = TA0;
-    Y(it+1,5) = T1 - (TBP - TA0);
-    Yf(it+1,5) = T1f - (TBPf - TA0);
+%     TauNoise = 1;
+%     hBP = hBP*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,2);
+%     hBPf = hBPf*(1-Ts/TauNoise) + Ts/TauNoise*Yf(it+1,2);
+%     h1 = h1*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,5);
+%     h1f = h1f*(1-Ts/TauNoise) + Ts/TauNoise*Yf(it+1,5);
+%     Y(it+1,2) = hBP;
+%     Yf(it+1,2) = hBPf;
+%     TA0 = U(it+1,10);
+%     Y(it+1,5) = T1 - (TBP - TA0);
+%     Yf(it+1,5) = T1f - (TBPf - TA0);
     dBP = U(it+1,6);
-    dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',hBPf,'CO2');
+    dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
     U(it+1,6) = dBPf;
     % ------------ New setpoint for linearization -----------
     u = U(it+1,:)' - U(it,:)';

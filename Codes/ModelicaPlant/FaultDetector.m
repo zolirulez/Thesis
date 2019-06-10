@@ -2,6 +2,7 @@ classdef FaultDetector < matlab.mixin.Copyable
     % This Fault Detector is an object for solving general
     %   computations required by a CUSUM or GLR 
     properties
+        Method % String of the type
         g   % g function
         m0  % Normal operation mean
         m1  % Fault operation mean
@@ -62,6 +63,7 @@ classdef FaultDetector < matlab.mixin.Copyable
             fault = g > fd.h;
         end
         function initialize(fd,Mean,Variance,Method,FurtherParameters)
+            fd.Method = Method;
             fd.m0 = Mean.m0;
             fd.v = Variance;
             switch Method
@@ -89,11 +91,11 @@ classdef FaultDetector < matlab.mixin.Copyable
             if isfield(FurtherParameters,'Threshold')
                 fd.h = FurtherParameters.Threshold;
             else
-                fd.thresholdInitialization(Method,FurtherParameters);
+                fd.thresholdInitialization(FurtherParameters);
             end
         end
-        function thresholdInitialization(fd,Method,FurtherParameters)
-            switch Method
+        function thresholdInitialization(fd,FurtherParameters)
+            switch fd.Method
                 case 'GLR'
                     fd.Pfalse = FurtherParameters.FalseAlarmProbability;
                     InitialGuess = FurtherParameters.InitialGuess;

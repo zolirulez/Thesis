@@ -73,11 +73,11 @@ p1m = p1;
 hBPm = hBP;
 pRm = pR;
 hRm = hR;
-TA1m = TA1;
+h1m = h1;
 % ------------------------- AUGMENTATION ----------------------------------
 Dx = [Dp1; Dh1; Dd1; DTA1; DpR; DhR; DdR; Ddelta_h];
 x = [p1; h1; d1; TA1; pR; hR; dR; delta_h];
-y = [p1m; hBPm; pRm; hRm; TA1m]; 
+y = [p1m; hBPm; pRm; hRm; h1m]; 
 u = [CRA; BP; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hHR; DmQ];
 d = [delta_h; DmQ]; % Unknown input to be estimated
 % Dimensions
@@ -92,10 +92,10 @@ dBound = 5;
 TBound = 2;
 DmBound = 0.05;
 % Note: simulate with correct fillingratio noise!
-noise.R = diag([pBound; hBound; pBound; hBound; TBound]);
-Qcont = diag([pBound*1e1; hBound*1e3; dBound; TBound*1e2;...
-    pBound*1e1; hBound*1e2; dBound;...
-    hBound*1e3])*1e5; % TODO
+noise.R = diag([pBound; hBound; pBound; hBound; hBound]);
+Qcont = diag([pBound; hBound; dBound; TBound;...
+    pBound; hBound; dBound;...
+    hBound])*1e3; % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians
