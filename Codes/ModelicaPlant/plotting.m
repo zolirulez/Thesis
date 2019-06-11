@@ -1,4 +1,4 @@
-load fault_sim
+load fault_chirp
 
 t = start:Ts:finish;
 figure(1)
@@ -45,22 +45,25 @@ subplot(312)
 plot(t,record(nx+nx+1:nx+nx+nx,:))
 xlabel('Time [s]')
 ylabel('State correction of K_xe')
-legend('p1','h1','d1','TA1','pR','hR','dR','delta_h');
+legend('p1','h1','d1','h1','pR','hR','dR','delta_h');
 subplot(3,3,7)
 plot(t,record(nx+nx+nx+1,:)/1e5,t,record(nx+nx+nx+3,:)/1e5)
 legend('p_1','p_R')
 xlabel('Time [s]')
 ylabel('Innovation [bar]')
+grid on
 subplot(3,3,8)
-plot(t,record(nx+nx+nx+2,:)/1e3,t,record(nx+nx+nx+4,:)/1e3)
-legend('h_B_P','h_R')
+plot(t,record(nx+nx+nx+2,:)/1e3,t,record(nx+nx+nx+5,:)/1e3)
+legend('h_B_P','h_1')
 xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
+grid on
 subplot(3,3,9)
-plot(t,record(nx+nx+nx+5,:))
-legend('T_A_1')
+plot(t,record(nx+nx+nx+4,:)/1e3)
+legend('h_R')
 xlabel('Time [s]')
-ylabel('Innovation [K]')
+ylabel('Innovation [kJ/kg]')
+grid on
 
 figure(3)
 plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))
@@ -69,7 +72,7 @@ xlabel('Time [s]')
 ylabel('Parameters')
 
 figure(1)
-load hcw
+load hcw_chirp
 subplot(221)
 hold on
 plot(t,recordf(1,:)/1e5,'--')
@@ -83,9 +86,7 @@ hold on
 plot(t,recordf(2,:)/1000,'--')
 plot(t,recordf(6,:)/1000,'--')
 plot(t,recordf(8,:)/1000,'--')
-if it == finish
-    plot(t,hcw(start:finish)/1000,'--')
-end
+plot(t(1:it-start+1),hcw(start:it)/1000,'--')
 hold off
 ylim([-50 600])
 xlabel('Time [s]')
@@ -106,49 +107,14 @@ ylim([0 900])
 xlabel('Time [s]')
 ylabel('Density [kg/m^3]')
 
-figure(2)
-subplot(311)
-hold on
-plot(t,recordf(nx+1:nx+nx,:),'--')
-hold off
-xlabel('Time [s]')
-ylabel('Eigenvalues of P_1')
-subplot(312)
-hold on
-plot(t,recordf(nx+nx+1:nx+nx+nx,:),'--')
-hold off
-xlabel('Time [s]')
-ylabel('State correction of K_xe')
-legend('p1','h1','d1','TA1','pR','hR','dR','delta_h');
-subplot(3,3,7)
-hold on
-plot(t,recordf(nx+nx+nx+1,:)/1e5,t,record(nx+nx+nx+3,:)/1e5,'--')
-hold off
-legend('p_1','p_R')
-xlabel('Time [s]')
-ylabel('Innovation [bar]')
-subplot(3,3,8)
-hold on
-plot(t,recordf(nx+nx+nx+2,:)/1e3,t,record(nx+nx+nx+4,:)/1e3,'--')
-hold off
-legend('h_B_P','h_R')
-xlabel('Time [s]')
-ylabel('Innovation [kJ/kg]')
-subplot(3,3,9)
-hold on
-plot(t,recordf(nx+nx+nx+5,:),'--')
-hold off
-legend('T_A_1')
-xlabel('Time [s]')
-ylabel('Innovation [K]')
 
-figure(3)
-hold on
-plot(t,recordf(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:),'--')
-hold off
-legend('s_0','k')
-xlabel('Time [s]')
-ylabel('Parameters')
+% figure(3)
+% hold on
+% plot(t,recordf(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:),'--')
+% hold off
+% legend('s_0','k')
+% xlabel('Time [s]')
+% ylabel('Parameters')
 
 figure(10)
 subplot(321)
@@ -163,15 +129,15 @@ grid on
 ylim([-5 1])
 xlabel('Time [s]')
 ylabel('Normalized weighted residuals')
-legend('DQ','DT','delta_h - used now')
+legend('DQ','TBP')
 subplot(313)
 try
-    plot(start:finish,diag([1 5e3])*outcorrecord,...
-        start:finish,outrecord'*diag([1 5e3]),...
+    plot(start:finish,diag([1 5e3])*(outcorrecord-[0; 273.15]),...
+        start:finish,(outrecord-[0; 273.15])'*diag([1 5e3]),...
         [detectiontime detectiontime],[0 1.5e5],'--',...
         [detectiontime-300 detectiontime-300],[0 1.5e5],'--');
-    legend('Reestimated DQ','Reestimated DT*5e3',...
-        'Faulty DQ','Faulty DT*5e3','Estimated detection time','Parameter sampling')
+    legend('Reestimated DQ','Reestimated TBP*5e3',...
+        'Faulty DQ','Faulty TBP*5e3','Estimated detection time','Parameter sampling')
     xlabel('Time [s]')
     ylabel('Outputs')
 catch

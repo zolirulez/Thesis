@@ -1,5 +1,5 @@
 clearvars
-load h1_sim_faulty
+load h1_faulty_chirp % h1_sim_faulty
 Y = h1_sim.signals.values;
 
 P = [];
@@ -30,7 +30,7 @@ end
 start = 1000;
 t = h1_sim.time(start:end,:);
 
-load h1_sim_faulty
+load h1_sim_faulty % h1_faulty_chirp
 Y = h1_sim.signals.values;
 figure(3)
 subplot(211)
@@ -42,12 +42,13 @@ plot(t,Y(start:end,end-9:end))
 xlabel('Time [s]')
 ylabel('Cell enthalpies [kJ/kg]')
 
-load uy_sim_faulty
+load uy_sim_faulty % uy_sim_faulty_chirp
 U = uy_sim.signals.values(:,1:12); 
 Y = uy_sim.signals.values(:,13:end); 
-delay = 200;
 CRA = U(:,1);
 CRIT = U(:,4);
+
+delay = 300;
 
 figure(5)
 subplot(211)
@@ -85,6 +86,12 @@ title('Cross covariances')
 xlabel('Lag [s]')
 grid on
 
-
-
-save('TGC')
+%%
+Y = hcw(start:end);
+X = [ones(length(Y),1) THR(start:end) TA0(start:end) CRIT(start:end) CRA(start:end)]; %  
+iddata0 = iddata(Y-mean(Y),X-mean(X),1);
+tfest(iddata0,0)
+tfest(iddata0,1)
+tfest(iddata0,2)
+tfest(iddata0,3)
+% save('TGC')

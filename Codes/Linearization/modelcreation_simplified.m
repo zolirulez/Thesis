@@ -92,7 +92,7 @@ dBound = 5;
 TBound = 2;
 DmBound = 0.05;
 % Note: simulate with correct fillingratio noise!
-noise.R = diag([pBound; hBound; pBound; hBound; hBound]);
+noise.R = diag([pBound; hBound; pBound; hBound; hBound])*1e4;
 Qcont = diag([pBound*1e2; hBound*1e2; dBound; TBound;...
     pBound*1e2; hBound*1e2; dBound;...
     hBound*1e2]); % TODO

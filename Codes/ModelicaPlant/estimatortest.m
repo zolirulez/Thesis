@@ -41,7 +41,7 @@ d1 = CoolProp.PropsSI('D','P',Y(start,1),'H',Xs(2),'CO2');
 rlsInitial.t = [5000; 6000; 1e3; 1e4; 1e3]*[1 1e-3];  % 10
 rlsInitial.P = diag(max(rlsInitial.t')')/10; 
 rls = RecursiveLeastSquares;
-lambda = 1 - 1e-4;
+lambda = 1 - 1e-4*0;
 weight = eye(size(rlsInitial.t,2));
 rls.initialize(lambda,weight,rlsInitial);
 % Fault Detector
@@ -100,6 +100,10 @@ detectiontime = 0;
 W(1,1) = 5000;
 W(2,1) = 6000;
 Wf = W;
+DQo = 74e3;
+DQ = 74e3;
+DTo = 3;
+DT = 3;
 recordf = record;
 for it = start:finish
     if ~rem(it,100)
@@ -124,12 +128,16 @@ for it = start:finish
     DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
 %     DmVf = Uf(it,3)*KvValues*sqrt(Uf(it+1,6)*(Yf(it,1) - Yf(it,3)));
     % Delayed hHR!
+    DQoo = DQo;
+    DToo = DTo;
+    DQo = DQ;
+    DTo = DT;
     DQ = DmV*(U(it-delay,11) - Y(it,2));
 %     DQf = DmVf*(Uf(it-delay,11) - Yf(it,2));
     DT = TBP - U(it+1,10);
 %     DTf = TBPf - Uf(it+1,10);
     phi = [1; CRA; TA0; CRIT; THR];
-    out = [DQ DT]; % 
+    out = [DQ TBP]; % 
 %     outf = [DQf DTf Xsf(8)];
     rls.regression(phi,out);
 %     rlsf.regression(phi,outf);
