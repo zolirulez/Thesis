@@ -60,7 +60,7 @@ plot(t,Tc(start:end,:)-273)
 xlabel('Time [s]')
 ylabel('Cell temperatures [C]')
 
-X = [ones(length(start:length(Y)),1) THR(start-delay:end-delay) TA0(start:end) CRIT(start:end) CRA(start:end)]; %  
+X = [ones(length(start:length(Y)),1) THR(start-delay:end-delay) TA0(start:end) CRIT(start-delay:end-delay) CRA(start-delay:end-delay)]; %  
 Y = hcw(start:end);
 P = (X'*X)\X'*Y;
 max(abs(Y-X*P))

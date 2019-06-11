@@ -37,19 +37,25 @@ BP = zeros(length(fielddata),1);
 CRV = fielddata(:,8)/100;
 CRIT = fielddata(:,21)/100;
 delta_hHR = zeros(length(fielddata),1);
+p1 = fielddata(:,2)/100;
+for it = 1:length(fielddata)
 dBP = 
 dG = 
 hG =
-hL = 
-TA0 = fielddata(:,3)/100;
+hL =
 hHR = 
-DmQ = 
-U = [CRA BP CRV CRIT delta_hHR dBP dG hG hL TA0 hHR DmQ];
-p1 = fielddata(:,2)/100;
+DmQ =
 hBP = 
 pR = 
 hR =
-TA1 = 
+TA1 =
+end
+ 
+TA0 = fielddata(:,3)/100;
+ 
+U = [CRA BP CRV CRIT delta_hHR dBP dG hG hL TA0 hHR DmQ];
+
+ 
 % UFunction
 %        CRA
 %         BP

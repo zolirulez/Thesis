@@ -152,11 +152,11 @@ ylabel('Parameters')
 
 figure(10)
 subplot(321)
-plot(start:finish,(paramrecord./paramrecord(:,end))')
+plot(start:finish,(paramrecord./paramrecord(:,it-start))')
 grid on
 xlabel('Time [s]')
 ylabel('Normalized parameters')
-ylim([-5 5])
+ylim([-20 20])
 subplot(312)
 plot(start:finish,(resrecord./max(resrecord(:,5:end)')')')
 grid on
@@ -166,12 +166,12 @@ ylabel('Normalized weighted residuals')
 legend('DQ','DT','delta_h - used now')
 subplot(313)
 try
-    plot(detectiontime:length(outcorrecord)+detectiontime-1,diag([1 5e3 1])*outcorrecord',...
-        start:finish,outrecord'*diag([1 5e3 1]),...
+    plot(start:finish,diag([1 5e3])*outcorrecord,...
+        start:finish,outrecord'*diag([1 5e3]),...
         [detectiontime detectiontime],[0 1.5e5],'--',...
         [detectiontime-300 detectiontime-300],[0 1.5e5],'--');
-    legend('Reestimated DQ','Reestimated DT*5e3','Reestimated delta_h',...
-        'Faulty DQ','Faulty DT*5e3','Faulty delta_h','Estimated detection time','Parameter sampling')
+    legend('Reestimated DQ','Reestimated DT*5e3',...
+        'Faulty DQ','Faulty DT*5e3','Estimated detection time','Parameter sampling')
     xlabel('Time [s]')
     ylabel('Outputs')
 catch
@@ -180,7 +180,7 @@ end
 subplot(322)
 fault = fault_sim.signals.values;
 try
-    plot(detectiontime:length(outcorrecord)+detectiontime-1,outrecord(2,detectiontime-start:it-start)-outcorrecord(:,2)',...
+    plot(start:finish,outrecord(2,:)-outcorrecord(2,:),...
         4000:finish,fault(4000:end-1)')
 catch
     warning('No fault plot')

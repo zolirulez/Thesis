@@ -54,8 +54,8 @@ classdef FaultDetector < matlab.mixin.Copyable
             if nargin > 2
                 fd.h = h;
             end
-            gain0 = (1-fd.g+0.01)/sqrt(2*pi*det(fd.v));
-            gain1 = (fd.g+0.01)/sqrt(2*pi*det(fd.vf));
+            gain0 = max(1-fd.g,0.01)/sqrt(2*pi*det(fd.v));
+            gain1 = max(fd.g,0.01)/sqrt(2*pi*det(fd.vf));
             r0 = gain0*exp(-0.5*(z-fd.m0)'/fd.v*(z-fd.m0));
             r1 = gain1*exp(-0.5*(z-fd.m1)'/fd.vf*(z-fd.m1));
             fd.g = (1-fd.Ts/fd.tau)*fd.g + fd.Ts/fd.tau*r1/(r0 + r1); % pi1

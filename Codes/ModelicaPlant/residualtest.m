@@ -1,14 +1,18 @@
 clearvars
-load longsimulation_faulty
+load uy_sim_faulty%longsimulation_faulty
 load fault_sim
 addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\detection')
-delta_h = record(8,:);
+nu = 12;
+ny = 5;
+U = uy_sim.signals.values(:,1:nu);
+Y = uy_sim.signals.values(:,nu+1:nu+ny);
 % Note: dont start it before 350, because of the delay operations
 start = 2001;
+finish = 10000;
 rlsInitial.t = [5000; 6000; 1e3; 1e4; 1e3]*[1 1e-3]; % 10
 rlsInitial.P = diag(max(rlsInitial.t')')/10; 
 rls = RecursiveLeastSquares;
-lambda = 1;
+lambda = 1-1e-5;
 weight = eye(2);
 rls.initialize(lambda,weight,rlsInitial);
 
@@ -37,7 +41,7 @@ param.MeanDensityRatio = 0.1;
 param.SamplingTime = 1;
 param.ResponsibilityTimeConstant = 100;
 mean.m0 = zeros(2,1);
-variance = diag([4.25e6 0.25]);
+variance = diag([5e6 5]);%diag([4.25e6 0.25]);
 fdEM.initialize(mean,variance,method,param);
 
 % Measurement correction
@@ -51,22 +55,24 @@ faultOperation = 0;
 resrecord = NaN(2,finish-start+1);
 paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
 outrecord = NaN(2,finish-start+1);
-outcorrecord = [];
+outcorrecord = NaN(2,finish-start+1);
+% outcorrecord = [];
 grecord = NaN(3,finish-start+1);
 faultrecord = NaN(3,finish-start+1);
 for it = start:finish
     TA0 = U(it,10);
-    THR = CoolProp.PropsSI('T','H',U(it,11),'P',Y(it,1),'CO2');
+    THR = CoolProp.PropsSI('T','H',U(it-300,11),'P',Y(it-300,1),'CO2');
     hBP = Y(it,2);
     TBP = CoolProp.PropsSI('T','H',hBP,'P',Y(it,1),'CO2');
-    DmG = U(it-1,4)*VValues(3)*U(it-1,7);
-    CRA = U(it-1,1);
-    DV = CRA*DVValues(2);
-    DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
-    DQ = DmV*(U(it,11) - hBP);
-    DT = max(1,TBP - TA0);
+    % DmG = U(it-1,4)*VValues(3)*U(it-1,7);
+    CRIT = U(it-300,4);
+    CRA = U(it-300,1);
+%    DV = CRA*DVValues(2);
+    DmV = U(it,3)*2.4e-5*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
+    DQ = DmV*(U(it-300,11) - hBP);
+    DT = TBP - TA0;
     sigma = DQ/DT;
-    phi = [1; CRA; TA0; DmG; THR];
+    phi = [1; CRA; TA0; CRIT; THR];
     out = [DQ DT];
     rls.regression(phi,out);
     if it == start
@@ -90,7 +96,7 @@ for it = start:finish
 %         Wp = W'/(W*W'); % right pseudoinverse
 %         outcor = out*Wp*Wsave;
         outcor = phi'*Wsave;
-        outcorrecord = [outcorrecord; outcor];
+        outcorrecord(:,it-start+1) = outcor';
     end
     resrecord(:,it-start+1) = rls.e;
     paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
@@ -113,10 +119,14 @@ xlabel('Time [s]')
 ylabel('Normalized weighted residuals')
 legend('DQ','DT - used now')
 subplot(313)
+try
 plot(detectiontime:length(outcorrecord)+detectiontime-1,diag([1 5e3])*outcorrecord',...
     start:finish,outrecord'*diag([1 5e3]),...
     [detectiontime detectiontime],[0 1.5e5],'--',...
     [detectiontime-300 detectiontime-300],[0 1.5e5],'--');
+catch
+    warning('No detection plot')
+end
 legend('Reestimated DQ','Reestimated DT*5e3',...
     'Faulty DQ','Faulty DT*5e3','Estimated detection time','Parameter sampling')
 xlabel('Time [s]')
@@ -124,8 +134,8 @@ ylabel('Outputs')
 subplot(322)
 fault = fault_sim.signals.values;
 try
-plot(detectiontime:length(outcorrecord)+detectiontime-1,outrecord(2,detectiontime-start:end)-outcorrecord(:,2)',...
-    4000:finish,fault(4000:end-1)')
+    plot(start:finish,outrecord(2,:)-outcorrecord(2,:),...
+        4000:finish,fault(4000:end-1)')
 catch
     warning('No fault plot')
 end
