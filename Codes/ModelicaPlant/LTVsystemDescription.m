@@ -10,18 +10,19 @@ for i=1:length(constantfields)
 end
 
 % Input values
+% u = [CRA; CRV; CRIT; CRG; DmQ; dBP; dG; hG; hL; hHR; pMT; TA0];
 CRAValue = u(1);
-BPValue = u(2);
-CRVValue = u(3);
-CRITValue = u(4);
-delta_hHRValue = u(5);
+CRVValue = u(2);
+CRITValue = u(3);
+CRGValue = u(4);
+DmQValue = u(5);
 dBPValue = u(6);
 dGValue = u(7);
 hGValue = u(8);
 hLValue = u(9);
-TA0Value = u(10);
-hHRValue = u(11);
-DmQValue = u(12);
+hHRValue = u(10);
+pMTValue = u(11);
+TA0Value = u(12);
 
 % States MODIFIED (TODO)
 p1Value = y(1);
@@ -47,11 +48,11 @@ delta_Td1Value = paramvectorT(2,p1idx(1),h1idx(1));
 % save('deltaValues','delta_Th1Value','delta_Td1Value');
 
 % Parameter estimation results
-s0Value = w(1);
-kValue = w(2);
+% s0Value = w(1);
+% kValue = w(2);
 
 % Substitutions
-value = [strrep('BP,CRA,CRIT,CRV,DmQ,TA0,TA1,d1,dBP,dG,dR,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_pdR,delta_phR,h1,hG,hHR,hL,k,p1,pR,s0',',','Value,') 'Value'];
+value = [strrep('CRA,CRG,CRIT,CRV,DmQ,TA0,TA1,d1,dBP,dG,dR,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_pdR,delta_phR,h1,hG,hHR,hL,p1,pMT,pR',',','Value,') 'Value'];
 ABCD = eval(['ABCD(' value ');']);
 A = ABCD(1:nx,1:nx);
 B = ABCD(1:nx,nx+1:nx+nu);

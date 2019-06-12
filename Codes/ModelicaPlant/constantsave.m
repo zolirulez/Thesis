@@ -26,28 +26,26 @@ ABCD = [A B; C D];
 c.eSValue = 0.65; % eS
 c.MxfITValue = 48; % MxfIT
 c.KvVValue = 0.8*3e-5; %0.8*6.753523557070838e-06; % 8.7841e-06;
-c.TauVValue = 1;
-c.TauVAValue = 1;
-c.TauQValue = 10;
+c.KvGValue = 2*3e-5; %0.8*6.753523557070838e-06; % 8.7841e-06;
 c.TauTAValue = 1;
 c.TaupValue = 0.1;
 c.TauhValue = 5;
 c.VcValue = 19.2*1e-3;
 c.VRValue = 133*1e-3;
 c.VGValue = 0.05*1e-3;
-% c.s0Value = 2500;
-% c.kValue = 7000;
+c.s0Value = 5000;
+c.kValue = 6000;
 c.cpValue = 1000;
 c.dAValue = 1.25;
 c.MxDVAValue = 5.2;
 
 % Derived
-c.delta_hpITValue = ... % delta_hpIT
-    (CoolProp.PropsSI('H','P',86.5e5,'S',...
-    CoolProp.PropsSI('S','P',38e5,...
-    'H',CoolProp.PropsSI('H','P',38e5,'Q',1,'CO2'),'CO2'),'CO2')-...
-    CoolProp.PropsSI('H','P',38e5,'Q',1,'CO2'))/...
-    (86.5e5-38e5);
+% c.delta_hpITValue = ... % delta_hpIT
+%     (CoolProp.PropsSI('H','P',86.5e5,'S',...
+%     CoolProp.PropsSI('S','P',38e5,...
+%     'H',CoolProp.PropsSI('H','P',38e5,'Q',1,'CO2'),'CO2'),'CO2')-...
+%     CoolProp.PropsSI('H','P',38e5,'Q',1,'CO2'))/...
+%     (86.5e5-38e5);
 
 fields = fieldnames(c);
 for it = 1:numel(fields)

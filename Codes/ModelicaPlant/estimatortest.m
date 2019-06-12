@@ -8,75 +8,39 @@ modelcreation_simplified
 % Running substitution_simplified.m
 [A,B,C,D] = constantsave(A,B,C,D,Qcont);
 substitution_simplified
-% Running kfinit_simulink.m
-kfinit_simulink
 
-% Experiment for observation
-gFunction = ginit(y);
+
+% Output function
+YFunction = matlabFunction(ginit(y));
 UFunction = u;
-YFunction = y;
-% Experiment for actuation
-XFunction = x;
-load uy_sim_faulty_chirp % uy_sim_faulty
+XFunctionSym = x;
+load uy_sim_faulty_chirp2 % uy_sim_faulty
 
+% Time parameters, data sets
+start = 2001;
+finish = 10000;
+delay = 300;
 U = uy_sim.signals.values(:,1:nu);
 Y = uy_sim.signals.values(:,nu+1:nu+ny);
+Y(:,5) = 1/3*[U(delay/2,10)*ones(delay,1); U(1:end-delay,10)] + 2/3*Y(:,2);
 ny = size(Y,2);
+
+% Running initialization functions for tools
+kfinit_simulink
+rlsinit_simulink
 uy = [zeros(nu+ny,1); reshape(system.A,nx*nx,1); reshape(system.B,nx*nu,1); reshape(system.C,ny*nx,1); reshape(system.D,ny*nu,1); reshape(noise.Q,nx*nx,1)];
-ABCDQ = [reshape([system.A system.B; system.C system.D],(nx+ny)*(nx+nu),1); reshape(noise.Q,nx*nx,1)];
-Xs = initial.xs;
-finish = 10000;
-start = 2001;
-delay = 200;
-% Delay of fan and compressors
-U(:,12) = 0.1*ones(length(U),1);
-% Parameter estimation
-nw = 2;
-% Constraints (note: feedback)
+
+% Initial numbers
 TBP = CoolProp.PropsSI('T','P',Y(start,1),'H',Y(start,2),'CO2');
-TBPf = TBP;
 dR = CoolProp.PropsSI('D','P',Y(start,3),'H',Y(start,4),'CO2');
-d1 = CoolProp.PropsSI('D','P',Y(start,1),'H',Xs(2),'CO2');
-% RLS
-rlsInitial.t = [5000; 6000; 1e3; 1e4; 1e3]*[1 1e-3];  % 10
-rlsInitial.P = diag(max(rlsInitial.t')')/10; 
-rls = RecursiveLeastSquares;
-lambda = 1 - 1e-4*0;
-weight = eye(size(rlsInitial.t,2));
-rls.initialize(lambda,weight,rlsInitial);
-% Fault Detector
-fdGLR = FaultDetector;
-mean.m0 = 0;
-variance = 0.25; %1.8614e+06;
-param.WindowLength = 500;
-param.InitialGuess = [-1,1];
-param.FalseAlarmProbability = 1e-20;
-method = 'GLR';
-fdGLR.initialize(mean,variance,method,param);
-clear param
-fdCUSUM = FaultDetector;
-mean.m1 = -1;
-param.FalseAlarmTime = 1e20;
-param.InitialGuess = [-1,1];
-method = 'CUSUM';
-fdCUSUM.initialize(mean,variance,method,param);
-clear param
-fdEM = FaultDetector;
-method = 'EM';
-param.MeanDensityRatio = 0.2;
-param.SamplingTime = 1;
-param.ResponsibilityTimeConstant = 100;
-variance = diag([2e7; 2]); % 2e7
-mean.m0 = zeros(size(rlsInitial.t,2),1);
-fdEM.initialize(mean,variance,method,param);
-% Boolean for fault operation
-faultOperation = 0;
-% Low pass filter
-hBP = Y(start,2);
-TA0 = U(start,10);
-h1 = Y(start,5);
-dBP = U(start,6);
-Tfault = 0;
+d1 = CoolProp.PropsSI('D','P',Y(start,1),'H',Y(start,5),'CO2');
+% Parameter estimation (not used now)
+nw = 2;
+W = [5000; 6000];
+
+% Fault detector and operation initialization
+faultinit_simulink
+
 % Recording
 record = NaN(nx+nx+nx+ny+nw,finish-start+1);
 resrecord = NaN(size(rlsInitial.t,2),finish-start+1);
@@ -85,26 +49,14 @@ outrecord = NaN(size(rlsInitial.t,2),finish-start+1);
 outcorrecord = NaN(size(rlsInitial.t,2),finish-start+1);
 grecord = NaN(3,finish-start+1);
 faultrecord = NaN(3,finish-start+1);
-% Fault operation Kalman Filter
-kff = copy(kf);
-rlsf = copy(rls);
-Xsf = Xs;
-Yf = Y;
-Uf = U;
-uyf = uy;
-ABCDQf = ABCDQ;
-hBPf = Yf(start,2);
-h1f = Yf(start,5);
-d1f = d1;
-detectiontime = 0;
-W(1,1) = 5000;
-W(2,1) = 6000;
-Wf = W;
-DQo = 74e3;
-DQ = 74e3;
-DTo = 3;
-DT = 3;
 recordf = record;
+
+
+% DQo = 74e3;
+% DQ = 74e3;
+% DTo = 3;
+% DT = 3;
+
 for it = start:finish
     if ~rem(it,100)
         disp(['Iteration ' num2str(it)])
@@ -120,23 +72,23 @@ for it = start:finish
     Xsf(7) = dR; % TODO
     % ------------ Parameter estimation -----------
     % Delayed THR!
-    delay = 300; %TODO
-    TA0 = U(it,10);
-    THR = CoolProp.PropsSI('T','H',U(it-delay,11),'P',Y(it-delay,1),'CO2');
+    TA0 = U(it,12);
+    THR = CoolProp.PropsSI('T','H',U(it-delay,10),'P',Y(it-delay,1),'CO2');
     CRIT = U(it-delay,4);
     CRA = U(it-delay,1);
-    DmV = U(it,3)*KvValues*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
+    DmV = U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
 %     DmVf = Uf(it,3)*KvValues*sqrt(Uf(it+1,6)*(Yf(it,1) - Yf(it,3)));
     % Delayed hHR!
-    DQoo = DQo;
-    DToo = DTo;
-    DQo = DQ;
-    DTo = DT;
-    DQ = DmV*(U(it-delay,11) - Y(it,2));
+%     DQoo = DQo;
+%     DToo = DTo;
+%     DQo = DQ;
+%     DTo = DT;
+    DQ = DmV*(U(it-delay,10) - Y(it,2));
 %     DQf = DmVf*(Uf(it-delay,11) - Yf(it,2));
-    DT = TBP - U(it+1,10);
+    DT = TBP - U(it,12);
+    CRV = U(it,2);
 %     DTf = TBPf - Uf(it+1,10);
-    phi = [1; CRA; TA0; CRIT; THR];
+    phi = [1; CRA; CRV; TA0; CRIT; THR];
     out = [DQ TBP]; % 
 %     outf = [DQf DTf Xsf(8)];
     rls.regression(phi,out);
@@ -150,7 +102,7 @@ for it = start:finish
         [~,fault2] = fdGLR.GLR(rls.e(2)); % TODO: wrong place
     end
     [~,fault3] = fdEM.EM(rls.e');
-    % Measurement correction: based on CUSUM
+    % Measurement correction: based on EM
     if it > start + 20
         if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
             Wsave = reshape(paramrecord(:,it-300-start),length(phi),length(out));
@@ -166,6 +118,7 @@ for it = start:finish
     if faultOperation
         outcor = phi'*Wsave;
         Tfault = out(2) - outcor(2);
+        rls.t = Wsave;
     else
         Tfault = 0;
         outcor = NaN;
@@ -186,31 +139,23 @@ for it = start:finish
     Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
     Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
     % ------------ Constraints -----------
-    TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
+    hBP = Y(it+1,2);
+    TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
     dR = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
-    d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,5),'CO2');
+    d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Xs(2),'CO2');
     % In case of a fault
     TBPf = TBP - Tfault;
-    Yf(it+1,2) = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
+    hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
+    Yf(it+1,2) = hBPf;
+    Yf(it+1,5) = Y(it+1,5) - 2/3*(hBP - hBPf);
     d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
-    % Low pass filters for noisy measurements
-%     TauNoise = 1;
-%     hBP = hBP*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,2);
-%     hBPf = hBPf*(1-Ts/TauNoise) + Ts/TauNoise*Yf(it+1,2);
-%     h1 = h1*(1-Ts/TauNoise) + Ts/TauNoise*Y(it+1,5);
-%     h1f = h1f*(1-Ts/TauNoise) + Ts/TauNoise*Yf(it+1,5);
-%     Y(it+1,2) = hBP;
-%     Yf(it+1,2) = hBPf;
-%     TA0 = U(it+1,10);
-%     Y(it+1,5) = T1 - (TBP - TA0);
-%     Yf(it+1,5) = T1f - (TBPf - TA0);
     dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
     Uf(it+1,6) = dBPf;
     % ------------ New setpoint for linearization -----------
     u = U(it+1,:)' - U(it,:)';
     uf = Uf(it+1,:)' - Uf(it,:)';
-    y = Y(it+1,1:ny)' - g(gFunction,XFunction,Xs,UFunction,U(it,:));
-    yf = Yf(it+1,1:ny)' - g(gFunction,XFunction,Xsf,UFunction,Uf(it,:));
+    y = Y(it+1,1:ny)' - g(YFunction,Xs,U(it,:));
+    yf = Yf(it+1,1:ny)' - g(YFunction,Xsf,Uf(it,:));
     kf.x1 = zeros(nx,1);
     kff.x1 = zeros(nx,1);
     uy = [u; y; A; B; C; D; Q];

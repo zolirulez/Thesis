@@ -1,13 +1,13 @@
-syms KvV                                % Kv value of valve
+syms KvV KvG                            % Kv value of valve
 syms TauV TauVA TauQ TauTA TauIT Taup Tauh   % Time constants
 syms TauFake                            % Fake time constant for derivative conversions
 syms R                                  % Hydraulic resistance
-syms Vc VR VG                           % Volumes of cells, reseiver and piston
+syms Vc VR VG VMT                       % Volumes of cells, reseiver and piston
 syms eS                                 % Isentropic efficiency
-syms p1 pR                              % Pressures
+syms p1 pR pMT                          % Pressures
 syms h1 hL hG hR hHR                    % Enthalpies
 syms d1 dR dG dA dBP                    % Densities
-syms CRV CRA CRIT BP                    % Capacity or division ratios
+syms CRV CRA CRIT CRG                   % Capacity or division ratios
 syms MxfIT                              % Frequencies
 syms DmV DmG DmL DmQ                    % Mass flow rates
 syms DVA MxDVA                          % Volume flow rate of air and its maximum
@@ -29,7 +29,8 @@ DmMT = DmQ;
 % Compressor
 % hIT = hG + delta_hpIT*(p1 - pR)/eS;
 % Joint
-DmG = dG*VG*CRIT*MxfIT;
+DmIT = dG*VG*CRIT*MxfIT;
+DmG = CRG*KvG*sqrt(dG*(pR - pMT));
 DmHR = DmMT + DmG;
 % hJ = (hMT*DmMT+hIT*DmG)/DmHR;
 % Heat recovery
@@ -44,30 +45,27 @@ DQ1 = (TA0 - TA1)*dA*DVA*cp;
 % High pressure valve
 DmV = CRV*KvV*sqrt(dBP*(p1 - pR));
 % Gas cooler, fluid side
-DmBP = DmV*BP;
-Dm1 = DmHR - DmBP;
-Dm2 = DmV*(1-BP);
 % ByPass valve
-hBP = (Dm2*(h1-delta_h) + DmBP*hHR)/DmV;
+hBP = h1-delta_h;
 % Receiver
 % Receiver Valve
 % Fan
 % ---------------------- DYNAMIC EQUATIONS --------------------------------
 % Heat Recovery
 % Gas cooler
-Dd1 = 1/Vc*(Dm1-Dm2);
+Dd1 = 1/Vc*(DmHR-DmV);
 Dp1 = 1/Taup*(-p1+delta_ph1*h1+delta_pd1*d1);
-Dh1 = 1/(d1*Vc)*(Dm1*hHR-Dm1*hBP + DQ1);
+Dh1 = 1/(d1*Vc)*(DmHR*hHR-DmV*hBP + DQ1);
 DTA1 = 1/TauTA*(-TA1 + 1/(w+1)*T1 + 1/(1/w+1)*TA0);
 % High pressure valve
 % Receiver
-DdR = 1/VR*(DmV-DmL-DmG);
+DdR = 1/VR*(DmV-DmL-DmIT-DmG);
 DpR = 1/Taup*(-pR+delta_phR*hR+delta_pdR*dR);
-DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG);
+DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG - DmIT*hG);
 % IT Compressor
 % Fan (A refers to air)
 % Disturbances
-Ddelta_h = -1/Tauh*delta_h;
+Ddelta_h = -1/Tauh*delta_h*0;
 % ------------------------- MEASUREMENTS ----------------------------------
 p1m = p1;
 hBPm = hBP;
@@ -78,8 +76,7 @@ h1m = h1;
 Dx = [Dp1; Dh1; Dd1; DTA1; DpR; DhR; DdR; Ddelta_h];
 x = [p1; h1; d1; TA1; pR; hR; dR; delta_h];
 y = [p1m; hBPm; pRm; hRm; h1m]; 
-u = [CRA; BP; CRV; CRIT; delta_hHR; dBP; dG; hG; hL; TA0; hHR; DmQ];
-d = [delta_h; DmQ]; % Unknown input to be estimated
+u = [CRA; CRV; CRIT; CRG; DmQ; dBP; dG; hG; hL; hHR; pMT; TA0];
 % Dimensions
 nx = length(x);
 nu = length(u);
@@ -92,7 +89,7 @@ dBound = 5;
 TBound = 2;
 DmBound = 0.05;
 % Note: simulate with correct fillingratio noise!
-noise.R = diag([pBound; hBound; pBound; hBound; hBound])*1e4;
+noise.R = diag([pBound; hBound; pBound; hBound; hBound])*1e3;
 Qcont = diag([pBound*1e2; hBound*1e2; dBound; TBound;...
     pBound*1e2; hBound*1e2; dBound;...
     hBound*1e2]); % TODO
@@ -101,9 +98,7 @@ noise.S = zeros(nx,ny);
 % Jacobians
 A = jacobian(Dx,x);
 B = jacobian(Dx,u);
-G = jacobian(Dx,d);
 C = jacobian(y,x);
 D = jacobian(y,u);
-E = jacobian(y,d);
-mx4sub = struct('A',A,'B',B,'C',C,'D',D,'G',G);
+mx4sub = struct('A',A,'B',B,'C',C,'D',D);
 fields = fieldnames(mx4sub);
