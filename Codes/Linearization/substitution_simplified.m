@@ -20,7 +20,10 @@ KvValues = [0.8 2]*3e-5;% 8.7841e-06;% KvV
 TauValues = [1 1 10 1 0.1 100]; % TauV TauVA TauQ TauTA Taup Tauh
 eValues = 0.65; % eS
 sigmaValues = [5000 6000 1000]; % s0 k cp 
-VValues = [19.2 133 0.05 (9.6+6.5+4.3)/60]*10^-3; % Vc VR VG
+VValues = [19.2 133 0.05*2 0.12*2]*10^-3; % Vc VR VG
+% NOTE: multiplication of 2 of the displacement values are given, since in
+% the maximal volume flow value is assumed to be the double of the nominal
+% volume flow.
 CRValues = [0 DmValues(1)/KvValues(1)/sqrt(dValues(1)*(pValues(1)-pValues(2)))...
     DVValues(1)/DVValues(2) DmValues(2)/dValues(3)/fValues(1)/VValues(3)]; % CRG CRV CRA CRIT
 wValue = 0.1;%dValues(5)*DVValues(1)*sigmaValues(3)/(sigmaValues(1)+sigmaValues(2)*DVValues(1));
@@ -50,7 +53,7 @@ for it = 1:numel(fields)
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{TauV TauVA TauQ TauTA Taup Tauh},num2cell(TauValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{eS},num2cell(eValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{s0 k cp},num2cell(sigmaValues));
-    mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{Vc VR VG VMT},num2cell(VValues));
+    mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{Vc VR V_IT VMT},num2cell(VValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{TA1 T1 TA0},num2cell(TValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{delta_ph1 delta_phR},num2cell(delta_phValues));
     mx4sub.(fields{it}) = subs(mx4sub.(fields{it}),{delta_pd1 delta_pdR},num2cell(delta_pdValues));

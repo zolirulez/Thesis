@@ -1,4 +1,6 @@
-clearvars
+if ~exist('fielddata')
+    clearvars
+end
 format long
 % Initializing FMIKit and adding paths
 addpath('C:\Users\u375749\Documents\Thesis\Codes\Linearization')
@@ -6,7 +8,12 @@ addpath('C:\Users\u375749\Documents\Thesis\Codes\MatlabPlant')
 % 'Running modelcreation_simplified.m
 modelcreation_simplified
 % Running substitution_simplified.m
-[A,B,C,D] = constantsave(A,B,C,D,Qcont);
+if ~exist('fielddata')
+    [A,B,C,D] = constantsave(A,B,C,D,Qcont);
+else
+    addpath('C:\Users\u375749\Documents\Thesis\Codes\Measurements')
+    [A,B,C,D] = fieldconstantsave(A,B,C,D,Qcont);
+end
 substitution_simplified
 
 
@@ -17,12 +24,18 @@ XFunctionSym = x;
 load uy_sim_faulty_chirp2 % uy_sim_faulty
 
 % Time parameters, data sets
-start = 2001;
-finish = 10000;
+
 delay = 300;
-U = uy_sim.signals.values(:,1:nu);
-Y = uy_sim.signals.values(:,nu+1:nu+ny);
-Y(:,5) = 1/3*[U(delay/2,10)*ones(delay,1); U(1:end-delay,10)] + 2/3*Y(:,2);
+if ~exist('fielddata')
+    U = uy_sim.signals.values(:,1:nu);
+    Y = uy_sim.signals.values(:,nu+1:nu+ny);
+    start = 2001;
+    finish = 10000;
+else
+    start = 501;
+    finish = length(Y);
+end
+% Y(:,5) = 1/3*[U(delay/2,10)*ones(delay,1); U(1:end-delay,10)] + 2/3*Y(:,2);
 ny = size(Y,2);
 
 % Running initialization functions for tools

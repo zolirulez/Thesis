@@ -1,8 +1,7 @@
 syms KvV KvG                            % Kv value of valve
 syms TauV TauVA TauQ TauTA TauIT Taup Tauh   % Time constants
-syms TauFake                            % Fake time constant for derivative conversions
 syms R                                  % Hydraulic resistance
-syms Vc VR VG VMT                       % Volumes of cells, reseiver and piston
+syms Vc VR V_IT VMT                     % Volumes of cells, reseiver and piston
 syms eS                                 % Isentropic efficiency
 syms p1 pR pMT                          % Pressures
 syms h1 hL hG hR hHR                    % Enthalpies
@@ -29,7 +28,7 @@ DmMT = DmQ;
 % Compressor
 % hIT = hG + delta_hpIT*(p1 - pR)/eS;
 % Joint
-DmIT = dG*VG*CRIT*MxfIT;
+DmIT = dG*V_IT*CRIT*MxfIT;
 DmG = CRG*KvG*sqrt(dG*(pR - pMT));
 DmHR = DmMT + DmG;
 % hJ = (hMT*DmMT+hIT*DmG)/DmHR;
