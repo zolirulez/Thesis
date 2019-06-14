@@ -25,12 +25,12 @@ pMTValue = u(11);
 TA0Value = u(12);
 
 % States MODIFIED (TODO)
-p1Value = y(1);
+p1Value = x(1);
 h1Value = x(2);
 d1Value = x(3);
 TA1Value = x(4);
-pRValue = y(3);
-hRValue = y(4);
+pRValue = x(5);
+hRValue = x(6);
 dRValue = x(7);
 delta_hValue = x(8);
 % Tables

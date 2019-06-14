@@ -105,4 +105,4 @@ end
 Y = [p1 hBP pR hR h1];
 U = [CRA CRV CRIT CRG DmQ dBP dG hG hL hHR pMT TA0];
 
-save('fielddata')
+save('fielddata','fielddata','U','Y')

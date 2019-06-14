@@ -19,7 +19,11 @@ fdEM = FaultDetector;
 method = 'EM';
 param.MeanDensityRatio = 0.2;
 param.SamplingTime = 1;
-param.ResponsibilityTimeConstant = 100;
+if ~exist('fielddata')
+    param.ResponsibilityTimeConstant = 100;
+else
+    param.ResponsibilityTimeConstant = 10;
+end
 variance = diag([2e7; 2]); % 2e7
 mean.m0 = zeros(size(rlsInitial.t,2),1);
 fdEM.initialize(mean,variance,method,param);
@@ -38,3 +42,4 @@ Wf = W;
 d1f = d1;
 TBPf = TBP;
 detectiontime = 0;
+switchofftime = 0;

@@ -24,7 +24,7 @@ subplot(223)
 hold on
 plot(t,record(4,:)-273.15)
 hold off
-ylim([-10 120])
+% ylim([-10 120])
 xlabel('Time [s]')
 ylabel('Temperature [C]')
 subplot(224)
@@ -65,11 +65,11 @@ xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 grid on
 
-figure(3)
-plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))
-legend('s_0','k')
-xlabel('Time [s]')
-ylabel('Parameters')
+% figure(3)
+% plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))
+% legend('s_0','k')
+% xlabel('Time [s]')
+% ylabel('Parameters')
 
 figure(1)
 load hcw_chirp
@@ -86,7 +86,7 @@ hold on
 plot(t,recordf(2,:)/1000,'--')
 plot(t,recordf(6,:)/1000,'--')
 plot(t,recordf(8,:)/1000,'--')
-plot(t(1:it-start+1),hcw(start:it)/1000,'--')
+% plot(t(1:it-start+1),hcw(start:it)/1000,'--')
 hold off
 ylim([-50 600])
 xlabel('Time [s]')
@@ -95,7 +95,7 @@ subplot(223)
 hold on
 plot(t,recordf(4,:)-273.15,'--')
 hold off
-ylim([-10 120])
+% ylim([-10 120])
 xlabel('Time [s]')
 ylabel('Temperature [C]')
 subplot(224)
@@ -146,8 +146,12 @@ end
 subplot(322)
 fault = fault_sim.signals.values;
 try
-    plot(start:finish,outrecord(2,:)-outcorrecord(2,:),...
-        4000:finish,fault(4000:end-1)')
+    if ~exist('fielddata')
+        plot(start:finish,outrecord(2,:)-outcorrecord(2,:),...
+            4000:finish,fault(4000:end-1)')
+    else
+        plot(start:finish,outrecord(2,:)-outcorrecord(2,:))
+    end
 catch
     warning('No fault plot')
 end
@@ -159,7 +163,7 @@ global var_resid FalseAlarmTime
 resid = resrecord(end,:);
 resid(1) = 0;
 figure(11)
-resid_normal = [0 resid(1,2:2000)];
+resid_normal = [0 resid(1,2:round(length(Y)/3))];
 subplot(221)
 autocorr(resid_normal)
 subplot(222)
