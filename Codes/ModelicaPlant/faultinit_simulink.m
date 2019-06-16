@@ -1,19 +1,20 @@
 % Fault Detector
 fdGLR = FaultDetector;
-mean.m0 = 0;
-variance = 0.25; %1.8614e+06;
-param.WindowLength = 500;
-param.InitialGuess = [-1,1];
+meanFD.m0 = 0;
+variance = 6e3; %1.8614e+06;
+param.WindowLength = 50;
+param.InitialGuess = [-400,20];
 param.FalseAlarmProbability = 1e-20;
 method = 'GLR';
-fdGLR.initialize(mean,variance,method,param);
+fdGLR.initialize(meanFD,variance,method,param);
 clear param
 fdCUSUM = FaultDetector;
-mean.m1 = -1;
+meanFD.m1 = -1;
 param.FalseAlarmTime = 1e20;
-param.InitialGuess = [-1,1];
+param.InitialGuess = [-400,20];
+% param.Threshold = 50;
 method = 'CUSUM';
-fdCUSUM.initialize(mean,variance,method,param);
+fdCUSUM.initialize(meanFD,variance,method,param);
 clear param
 fdEM = FaultDetector;
 method = 'EM';
@@ -25,8 +26,8 @@ else
     param.ResponsibilityTimeConstant = 10;
 end
 variance = diag([2e7; 2]); % 2e7
-mean.m0 = zeros(size(rlsInitial.t,2),1);
-fdEM.initialize(mean,variance,method,param);
+meanFD.m0 = zeros(size(rlsInitial.t,2),1);
+fdEM.initialize(meanFD,variance,method,param);
 
 % Fault operation
 faultOperation = 0;

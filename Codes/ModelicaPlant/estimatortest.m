@@ -100,10 +100,20 @@ for it = start:finish
     % ------------ Fault Operation -----------
     if it == start
         rls.e = zeros(1,length(rls.e));
-        [~,fault1] = fdCUSUM.CUSUM(rls.e(2)); % TODO: wrong place
-        [~,fault2] = fdGLR.GLR(rls.e(2)); % TODO: wrong place
     end
     [~,fault3] = fdEM.EM(rls.e');
+    if it > start+10
+        if exist('fielddata')
+            Apol = [1 -0.9886]; Bpol = [-1.078]; Cpol = [1 -0.3908 0.04806 0.3148];
+            ew = filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))';
+%         else
+            % Apol = [1 -0.04449 -0.9424]; Bpol = [57.53 -57.58]; Cpol = [1 0.01753 -0.8586 -0.026];
+        end
+    else
+        ew = 0;
+    end
+    [~,fault1] = fdCUSUM.CUSUM(ew(1,end)); % TODO: wrong place
+    [~,fault2] = fdGLR.GLR(ew(1,end)); % TODO: wrong place
     % Measurement correction: based on EM
     if it > start + 20
         if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation

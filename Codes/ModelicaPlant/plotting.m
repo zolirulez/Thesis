@@ -65,11 +65,11 @@ xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 grid on
 
-% figure(3)
-% plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))
-% legend('s_0','k')
-% xlabel('Time [s]')
-% ylabel('Parameters')
+figure(3)
+plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))
+legend('s_0','k')
+xlabel('Time [s]')
+ylabel('Parameters')
 
 figure(1)
 load hcw_chirp
@@ -160,7 +160,11 @@ ylabel('Fault estimation [K]')
 legend('Estimated fault','True fault')
 %% Residual
 global var_resid FalseAlarmTime
-resid = resrecord(end,:);
+if ~exist('fielddata')
+    resid = resrecord(end,:);
+else
+    resid = [0 ew];
+end
 resid(1) = 0;
 figure(11)
 resid_normal = [0 resid(1,2:round(length(Y)/3))];
@@ -179,26 +183,26 @@ subplot(224)
 var_resid1 = var(resid_normal);
 histfit(resid_normal,50)
 title(['Histogram of data with variance ' num2str(var_resid1)])
-figure(12)
-wcn = 0.2;
-[Bpol,Apol] = butter(1,wcn,'high');
-resid2 = filter(Bpol,Apol,resid);
-resid_normal2 = resid2(1,5:2000);
-subplot(221)
-autocorr(resid_normal2)
-subplot(222)
-[pxx,f,pxxc] = periodogram(resid_normal2,rectwin(length(resid_normal2)),...
-    length(resid_normal2),1,'ConfidenceLevel',0.99);
-cpxx = cumsum(pxx)./sum(pxx);
-plot(f,cpxx,'b',f,f./max(f)+0.05,'r--',f+0.05*max(f),f./max(f),'r--')
-xlabel('Frequency')
-title('Cumulative periodrogram with 99% conf. interval')
-subplot(223)
-probplot('normal',resid_normal2)
-subplot(224)
-var_resid2 = var(resid_normal2);
-histfit(resid_normal2,50)
-title(['Histogram of data with variance ' num2str(var_resid2)])
+% figure(12)
+% wcn = 0.2;
+% [Bpol,Apol] = butter(1,wcn,'high');
+% resid2 = filter(Bpol,Apol,resid);
+% resid_normal2 = resid2(1,5:2000);
+% subplot(221)
+% autocorr(resid_normal2)
+% subplot(222)
+% [pxx,f,pxxc] = periodogram(resid_normal2,rectwin(length(resid_normal2)),...
+%     length(resid_normal2),1,'ConfidenceLevel',0.99);
+% cpxx = cumsum(pxx)./sum(pxx);
+% plot(f,cpxx,'b',f,f./max(f)+0.05,'r--',f+0.05*max(f),f./max(f),'r--')
+% xlabel('Frequency')
+% title('Cumulative periodrogram with 99% conf. interval')
+% subplot(223)
+% probplot('normal',resid_normal2)
+% subplot(224)
+% var_resid2 = var(resid_normal2);
+% histfit(resid_normal2,50)
+% title(['Histogram of data with variance ' num2str(var_resid2)])
 % % Preparation for detection
 % [Bpol,Apol] = butter(3,0.9*wcn,'low');
 % resid = filter(Bpol,Apol,resid);
