@@ -229,7 +229,11 @@ relparamstd2 = sqrt(diag(paramvar2))./paramrecord(1+length(phi):2*length(phi),de
 % --------------- Detection ----------------------
 figure(13)
 subplot(311)
-plot(start:finish,(resrecord./max(resrecord(:,5:end)')')')
+plot(start:finish,(resrecord./max(resrecord(:,5:end)')')','LineWidth',2)
+hold on
+plot(start+1:finish,ew*100/max(ew));
+hold off
+ylim([-20 20])
 grid on
 ylabel('Residual')
 xlabel('Time [s]')
