@@ -1,9 +1,13 @@
 % Fault Detector
 fdGLR = FaultDetector;
 meanFD.m0 = 0;
-variance = 6e3; %1.8614e+06;
+if exist('fielddata')
+    variance = 6e3; %1.8614e+06;
+else
+    variance = 0.25;
+end
 param.WindowLength = 50;
-param.InitialGuess = [-400,20];
+param.InitialGuess = [-400,100];
 param.FalseAlarmProbability = 1e-20;
 method = 'GLR';
 fdGLR.initialize(meanFD,variance,method,param);
@@ -11,7 +15,7 @@ clear param
 fdCUSUM = FaultDetector;
 meanFD.m1 = -1;
 param.FalseAlarmTime = 1e20;
-param.InitialGuess = [-400,20];
+param.InitialGuess = [-400,100];
 % param.Threshold = 50;
 method = 'CUSUM';
 fdCUSUM.initialize(meanFD,variance,method,param);

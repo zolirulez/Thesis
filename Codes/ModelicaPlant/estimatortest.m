@@ -60,6 +60,7 @@ resrecord = NaN(size(rlsInitial.t,2),finish-start+1);
 paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
 outrecord = NaN(size(rlsInitial.t,2),finish-start+1);
 outcorrecord = NaN(size(rlsInitial.t,2),finish-start+1);
+phirecord = NaN(size(rlsInitial.t,1),finish-start+1);
 grecord = NaN(3,finish-start+1);
 faultrecord = NaN(3,finish-start+1);
 recordf = record;
@@ -87,13 +88,14 @@ for it = start:finish
     % Delayed THR!
     TA0 = U(it,12);
     THR = CoolProp.PropsSI('T','H',U(it-delay,10),'P',Y(it-delay,1),'CO2');
-    CRIT = U(it-delay,4);
+    CRG = U(it-delay,4);
+    CRIT = U(it-delay,3);
     CRA = U(it-delay,1);
     DmV = U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
     DQ = DmV*(U(it-delay,10) - Y(it,2));
     DT = TBP - U(it,12);
     CRV = U(it,2);
-    phi = [1; CRA; CRV; TA0; CRIT; THR];
+    phi = [1; CRA; CRV; TA0; THR];
     out = [DQ TBP]; 
     rls.regression(phi,out);
 %     W = [DQ-phi(2)*rls.t(2)'; rls.t(2)]/DT;
@@ -106,8 +108,9 @@ for it = start:finish
         if exist('fielddata')
             Apol = [1 -0.9886]; Bpol = [-1.078]; Cpol = [1 -0.3908 0.04806 0.3148];
             ew = filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))';
-%         else
-            % Apol = [1 -0.04449 -0.9424]; Bpol = [57.53 -57.58]; Cpol = [1 0.01753 -0.8586 -0.026];
+        else
+%             Apol = [0.8006   -1.6012    0.8006]; Cpol = [1.0000   -1.5610    0.6414];
+            ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
         end
     else
         ew = 0;
@@ -184,6 +187,7 @@ for it = start:finish
     paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
     outrecord(:,it-start+1) = out';
     outcorrecord(:,it-start+1) = outcor';
+    phirecord(:,it-start+1) = phi;
     grecord(:,it-start+1) = [fdCUSUM.g; fdGLR.g; fdEM.g];
     faultrecord(:,it-start+1) = [fault1; fault2; fault3];
 end

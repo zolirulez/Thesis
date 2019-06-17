@@ -167,9 +167,9 @@ else
 end
 resid(1) = 0;
 figure(11)
-resid_normal = [0 resid(1,2:round(length(Y)/3))];
+resid_normal = [0 resid(1,2:round(length(Y)/5))];
 subplot(221)
-autocorr(resid_normal)
+autocorr(detrend(resid_normal))
 subplot(222)
 [pxx,f,pxxc] = periodogram(resid_normal,rectwin(length(resid_normal)),...
     length(resid_normal),1,'ConfidenceLevel',0.99);
@@ -184,6 +184,24 @@ var_resid1 = var(resid_normal);
 histfit(resid_normal,50)
 title(['Histogram of data with variance ' num2str(var_resid1)])
 % figure(12)
+outs = outrecord(:,2:round(length(Y)/5));
+phis = phirecord(:,2:round(length(Y)/5));
+if 1
+%     figure(20)
+%     colormap jet
+    for it2 = 1:100:length(outs)-100
+        paramvar1 = var(outs(1,it2:it2+100))./(phis(:,it2+100)*phis(:,it2+100)');
+        paramvar2 = var(outs(2,it2:it2+100))./(phis(:,it2+100)*phis(:,it2+100)');
+%         subplot(121), imagesc(paramvar1)
+%         subplot(122), imagesc(paramvar2)
+%         pause(0.1)
+    end
+end
+diag(paramvar1)
+diag(paramvar2)
+var(paramrecord(:,length(outs)-200:length(outs)-100)')'
+relparamstd1 = sqrt(diag(paramvar1))./paramrecord(1:length(phi),detectiontime-300-start)
+relparamstd2 = sqrt(diag(paramvar2))./paramrecord(1+length(phi):2*length(phi),detectiontime-300-start)
 % wcn = 0.2;
 % [Bpol,Apol] = butter(1,wcn,'high');
 % resid2 = filter(Bpol,Apol,resid);
