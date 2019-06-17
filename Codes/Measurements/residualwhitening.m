@@ -1,7 +1,7 @@
 clearvars
-load resid_normal_chirp
+load resid_normal_fielddata
 % Input: [1; CRA; CRV; TA0; CRIT; THRd]
-delay = 300;
+delay = 75;
 Y = resid_normal;
 U = Ur(2:length(resid_normal)+1);
 

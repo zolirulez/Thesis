@@ -25,7 +25,8 @@ load uy_sim_faulty_chirp2 % uy_sim_faulty
 
 % Time parameters, data sets
 
-delay = 300;
+delayT = 1*3;
+delayh = 25*3;
 if ~exist('fielddata')
     U = uy_sim.signals.values(:,1:nu);
     Y = uy_sim.signals.values(:,nu+1:nu+ny);
@@ -86,16 +87,16 @@ for it = start:finish
     Xsf(7) = dR; % TODO
     % ------------ Parameter estimation -----------
     % Delayed THR!
-    TA0 = U(it,12);
-    THR = CoolProp.PropsSI('T','H',U(it-delay,10),'P',Y(it-delay,1),'CO2');
-    CRG = U(it-delay,4);
-    CRIT = U(it-delay,3);
-    CRA = U(it-delay,1);
+    TA0 = U(it-delayT,12);
+    THR = CoolProp.PropsSI('T','H',U(it-delayh,10),'P',Y(it-delayh,1),'CO2');
+    CRG = U(it-delayh,4);
+    CRIT = U(it-delayh,3);
+    CRA = U(it-delayT,1);
     DmV = U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
-    DQ = DmV*(U(it-delay,10) - Y(it,2));
+    DQ = DmV*(U(it-delayh,10) - Y(it,2));
     DT = TBP - U(it,12);
     CRV = U(it,2);
-    phi = [1; CRA; CRV; TA0; THR];
+    phi = [1; CRA; CRV; TA0; CRIT; CRG; THR];
     out = [DQ TBP]; 
     rls.regression(phi,out);
 %     W = [DQ-phi(2)*rls.t(2)'; rls.t(2)]/DT;
@@ -120,7 +121,7 @@ for it = start:finish
     % Measurement correction: based on EM
     if it > start + 20
         if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
-            Wsave = reshape(paramrecord(:,it-300-start),length(phi),length(out));
+            Wsave = reshape(paramrecord(:,it-500-start),length(phi),length(out));
             if ~detectiontime
                 detectiontime = it;
             end
@@ -140,20 +141,20 @@ for it = start:finish
         outcor = NaN;
     end
     % ------------ Parameter substitutions for new iteration -----------
-%     UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
-%     UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
-%     ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
-%     ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
-%     A = ABCDQ(1:nx*nx);
-%     B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
-%     C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-%     D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-%     Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
-%     Af = ABCDQf(1:nx*nx);
-%     Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
-%     Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-%     Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-%     Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+    UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
+    UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
+    ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
+    ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
+    A = ABCDQ(1:nx*nx);
+    B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
+    C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+    D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+    Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+    Af = ABCDQf(1:nx*nx);
+    Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
+    Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+    Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+    Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
     % ------------ Constraints -----------
     hBP = Y(it+1,2);
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
@@ -168,14 +169,14 @@ for it = start:finish
     dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
     Uf(it+1,6) = dBPf;
     % ------------ New setpoint for linearization -----------
-%     u = U(it+1,:)' - U(it,:)';
-%     uf = Uf(it+1,:)' - Uf(it,:)';
-%     y = Y(it+1,1:ny)' - g(YFunction,Xs,U(it,:));
-%     yf = Yf(it+1,1:ny)' - g(YFunction,Xsf,Uf(it,:));
-%     kf.x1 = zeros(nx,1);
-%     kff.x1 = zeros(nx,1);
-%     uy = [u; y; A; B; C; D; Q];
-%     uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
+    u = U(it+1,:)' - U(it,:)';
+    uf = Uf(it+1,:)' - Uf(it,:)';
+    y = Y(it+1,1:ny)' - g(YFunction,Xs,U(it,:));
+    yf = Yf(it+1,1:ny)' - g(YFunction,Xsf,Uf(it,:));
+    kf.x1 = zeros(nx,1);
+    kff.x1 = zeros(nx,1);
+    uy = [u; y; A; B; C; D; Q];
+    uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
     % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     statecorrectionf = kff.Kx*kff.e;

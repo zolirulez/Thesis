@@ -30,7 +30,7 @@ DmMT = DmQ;
 % Joint
 DmIT = dG*V_IT*CRIT*MxfIT;
 DmG = CRG*KvG*sqrt(dG*(pR - pMT));
-DmHR = DmMT + DmG;
+DmHR = DmMT + DmIT;
 % hJ = (hMT*DmMT+hIT*DmG)/DmHR;
 % Heat recovery
 % hHR = hJ - delta_hHR;
@@ -55,7 +55,8 @@ hBP = h1-delta_h;
 Dd1 = 1/Vc*(DmHR-DmV);
 Dp1 = 1/Taup*(-p1+delta_ph1*h1+delta_pd1*d1);
 Dh1 = 1/(d1*Vc)*(DmHR*hHR-DmV*hBP + DQ1);
-DTA1 = 1/TauTA*(-TA1 + 1/(w+1)*T1 + 1/(1/w+1)*TA0);
+DTA1 = 1/1*(-TA1 + 1/(w+1)*T1 + 1/(1/w+1)*TA0);
+%DTA1 = (w+1)/(2*w/(DVA*cp*dA))*(-TA1 + 1/(w+1)*T1 + 1/(1/w+1)*TA0);
 % High pressure valve
 % Receiver
 DdR = 1/VR*(DmV-DmL-DmIT-DmG);

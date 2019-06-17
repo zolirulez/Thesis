@@ -40,7 +40,7 @@ VR = 0.115;
 VMT = (6.5 + 9.2)/3600/48*2; % Assuming that maximal f is double of nominal 24 Hz.
 VIT = 3.3/3600/48;
 Mxf = 48;
-delay = 300;
+delay = 75;
 TA0offsetindex = 12365; % When the TA0 is correct again (else 5 minus is considered to find gasloop potential references.
 % Data
 CRA = fielddata(:,7)/100;
