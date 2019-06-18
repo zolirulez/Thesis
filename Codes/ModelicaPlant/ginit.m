@@ -1,4 +1,5 @@
 function g = ginit(g)
+% Function to initialize function g
 
 load constants
 

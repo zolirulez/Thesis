@@ -183,7 +183,7 @@ subplot(224)
 var_resid1 = var(resid_normal);
 histfit(resid_normal,50)
 title(['Histogram of data with variance ' num2str(var_resid1)])
-% figure(12)
+% ------- Relative parameter standard deviations -------
 outs = outrecord(:,2:round(length(Y)/5));
 phis = phirecord(:,2:round(length(Y)/5));
 if 1
@@ -202,53 +202,26 @@ diag(paramvar2)
 var(paramrecord(:,length(outs)-200:length(outs)-100)')'
 relparamstd1 = sqrt(diag(paramvar1))./paramrecord(1:length(phi),detectiontime-300-start)
 relparamstd2 = sqrt(diag(paramvar2))./paramrecord(1+length(phi):2*length(phi),detectiontime-300-start)
-% wcn = 0.2;
-% [Bpol,Apol] = butter(1,wcn,'high');
-% resid2 = filter(Bpol,Apol,resid);
-% resid_normal2 = resid2(1,5:2000);
-% subplot(221)
-% autocorr(resid_normal2)
-% subplot(222)
-% [pxx,f,pxxc] = periodogram(resid_normal2,rectwin(length(resid_normal2)),...
-%     length(resid_normal2),1,'ConfidenceLevel',0.99);
-% cpxx = cumsum(pxx)./sum(pxx);
-% plot(f,cpxx,'b',f,f./max(f)+0.05,'r--',f+0.05*max(f),f./max(f),'r--')
-% xlabel('Frequency')
-% title('Cumulative periodrogram with 99% conf. interval')
-% subplot(223)
-% probplot('normal',resid_normal2)
-% subplot(224)
-% var_resid2 = var(resid_normal2);
-% histfit(resid_normal2,50)
-% title(['Histogram of data with variance ' num2str(var_resid2)])
-% % Preparation for detection
-% [Bpol,Apol] = butter(3,0.9*wcn,'low');
-% resid = filter(Bpol,Apol,resid);
-% resid_normal = [0 resid(1,2:2000)];
-% var_resid = var(resid_normal);
 % --------------- Detection ----------------------
 figure(13)
 subplot(311)
-plot(start:finish,(resrecord./max(resrecord(:,5:end)')')','LineWidth',2)
-hold on
-plot(start+1:finish,ew*100/max(ew));
-hold off
+plot(start:finish,(resrecord./max(resrecord(:,5:end)')')')
 ylim([-20 20])
 grid on
 ylabel('Residual')
 xlabel('Time [s]')
 subplot(334)
-plot(start:finish,grecord(1,:)',start:finish,fdCUSUM.h*rectwin(length(resid)),'r--')
+plot(start:finish,grecord(1,:)',start:finish,fdCUSUM.h*rectwin(length(Y)-start),'r--')
 ylabel('g function')
 xlabel('Time [s]')
 title('CUSUM')
 subplot(337)
-plot(start:finish,grecord(1,:)'>fdCUSUM.h,'LineWidth',2)
+plot(start:finish,grecord(1,:)'>fdCUSUM.h)
 ylabel('Fault detection')
 xlabel('Time [s]')
 % GLR
 subplot(335)
-plot(start:finish,grecord(2,:)',start:finish,fdGLR.h*rectwin(length(resid)),'r--')
+plot(start:finish,grecord(2,:)',start:finish,fdGLR.h*rectwin(length(Y)-start),'r--')
 ylim([0 fdGLR.h*10])
 ylabel('g function')
 xlabel('Time [s]')
@@ -260,7 +233,7 @@ xlabel('Time [s]')
 % EM
 M = 500;
 subplot(336)
-plot(start:finish,grecord(3,:)',start:finish,fdEM.h*rectwin(length(resid)),'r--')
+plot(start:finish,grecord(3,:)',start:finish,fdEM.h*rectwin(length(Y)-start),'r--')
 ylabel('g function')
 xlabel('Time [s]')
 title('Expectation Maximization (multidim.)')
@@ -268,3 +241,9 @@ subplot(339)
 plot(start:finish,grecord(3,:)'>fdEM.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
+
+if exist('fielddata')
+    figure(15)
+    plot(start+1:it,ew);
+    title('Whitened residual')
+end

@@ -23,11 +23,11 @@ ny = size(C,1);
 ABCD = [A B; C D];
 
 % Constants
-c.eSValue = 0.65; % eS
-c.MxfITValue = 48; % MxfIT
+c.eSValue = 0.65; 
+c.MxfITValue = 48; 
 c.KvVValue = 0.8*3e-5; 
 c.KvGValue = 1.6*3e-5; 
-c.TauTAValue = 1;
+c.TauAValue = 1;
 c.TaupValue = 0.1;
 c.TauhValue = 5;
 c.VcValue = 19.2*1e-3;

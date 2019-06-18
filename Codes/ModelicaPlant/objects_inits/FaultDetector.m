@@ -54,10 +54,10 @@ classdef FaultDetector < matlab.mixin.Copyable
             if nargin > 2
                 fd.h = h;
             end
-            gain0 = max(1-fd.g,0.01)/sqrt(2*pi*det(fd.v));
-            gain1 = max(fd.g,0.01)/sqrt(2*pi*det(fd.vf));
-            r0 = gain0*max(exp(-0.5*(z-fd.m0)'/fd.v*(z-fd.m0)),1e-15);
-            r1 = gain1*max(exp(-0.5*(z-fd.m1)'/fd.vf*(z-fd.m1)),1e-15);
+            gain0 = max(1-fd.g,1e-5)/sqrt(2*pi*det(fd.v));
+            gain1 = max(fd.g,1e-5)/sqrt(2*pi*det(fd.vf));
+            r0 = gain0*max(exp(-0.5*(z-fd.m0)'/fd.v*(z-fd.m0)),1e-20);
+            r1 = gain1*max(exp(-0.5*(z-fd.m1)'/fd.vf*(z-fd.m1)),1e-20);
             fd.g = (1-fd.Ts/fd.tau)*fd.g + fd.Ts/fd.tau*r1/(r0 + r1); % pi1
             g = fd.g;
             fault = g > fd.h;
@@ -122,11 +122,11 @@ classdef FaultDetector < matlab.mixin.Copyable
             mus = sqrt((m1-fd.m0)^2/(2*fd.v));
             L = @(mus,sigs,h)(sigs^2/2/mus^2*...
                 (exp(-2*(mus*h/sigs^2+1.166*mus/sigs))-1+2*(mus*h/sigs^2+1.166*mus/sigs)));
-            Tdetect = L(mus^2,sigs^2,h);
-            Tfalse = L(-mus^2,sigs^2,h);
+            logTdetect = log(L(mus^2,sigs^2,h));
+            logTfalse = L(-mus^2,sigs^2,h);
             % Checking how close we are to the solution
-            detectresid = Tdetect;
-            falseresid = Tfalse - FalseAlarmTime;
+            detectresid = logTdetect;
+            falseresid = logTfalse - log(FalseAlarmTime);
             resid = [detectresid; falseresid];
         end
         function [Tdetect,Tfalse] = ARL(fd)
@@ -154,10 +154,10 @@ classdef FaultDetector < matlab.mixin.Copyable
             PF = 1 - chi2cdf(2*h, dof);
             PD = 1 - ncx2cdf(2*h, dof,lambda);
             % Returns
-            Pmissed = 1 - PD;
-            Pfalse = PF;
-            residMissed = Pmissed;
-            residFalse = Pfalse - FalseAlarmProbability;
+            logPmissed = 1 - PD;
+            logPfalse = PF;
+            residMissed = logPmissed;
+            residFalse = logPfalse - log(FalseAlarmProbability);
             resid = [residMissed; residFalse];
         end
         function [Pmissed, Pfalse] = GLRdesign(fd)

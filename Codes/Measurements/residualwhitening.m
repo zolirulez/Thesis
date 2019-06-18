@@ -1,5 +1,10 @@
 clearvars
-load resid_normal_fielddata
+fielddata = 0;
+if fielddata
+    load resid_normal_fielddata
+else
+    load resid_normal_chirp
+end
 % Input: [1; CRA; CRV; TA0; CRIT; THRd]
 delay = 75;
 Y = resid_normal;
@@ -8,12 +13,22 @@ U = TA0(2:length(resid_normal)+1,1); %Ur(2:length(resid_normal)+1);
 % NOTE: for fielddata the investigated length is 1:7000, for 
 % chirp it is 1:2000
 
-y=Y(1:3500,1);
-u=U(1:3500,1);
+if fielddata
+    y=Y(1:3500,1);
+    u=U(1:3500,1);
+else
+    y=Y(1:1000,1);
+    u=U(1:1000,1);
+end
 z=[y u];
 Ze=dtrend(z);
-y=Y(3501:7000,1);
-u=U(3501:7000,1);
+if fielddata
+    y=Y(3501:7000,1);
+    u=U(3501:7000,1);
+else
+    y=Y(1001:2000,1);
+    u=U(1001:2000,1);
+end
 z=[y u];
 Zt=dtrend(z);
 

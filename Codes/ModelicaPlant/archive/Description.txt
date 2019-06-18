@@ -10,3 +10,13 @@ f
 ginverseinit
 ginverse
 
+Parameter identification:
+paramesttester
+
+Outdated detector functions:
+GLR_design
+myARL
+myARL4fsolve
+myCUSUM
+myGLR
+MSCD

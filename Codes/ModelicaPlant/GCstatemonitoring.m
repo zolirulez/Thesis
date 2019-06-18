@@ -1,3 +1,6 @@
+% Script for plotting enthalpy or temperature states (discretized to 10
+% cells) in gas cooler
+
 clearvars
 load h1_faulty_chirp % h1_sim_faulty
 Y = h1_sim.signals.values;

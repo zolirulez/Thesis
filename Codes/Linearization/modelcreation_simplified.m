@@ -1,5 +1,5 @@
 syms KvV KvG                            % Kv value of valve
-syms TauV TauVA TauQ TauTA TauIT Taup Tauh   % Time constants
+syms TauA Taup Tauh                     % Time constants
 syms R                                  % Hydraulic resistance
 syms Vc VR V_IT VMT                     % Volumes of cells, reseiver and piston
 syms eS                                 % Isentropic efficiency
@@ -26,14 +26,11 @@ syms delta_hHR delta_h                  % Enthalpy drops
 DmL = DmQ;
 DmMT = DmQ;
 % Compressor
-% hIT = hG + delta_hpIT*(p1 - pR)/eS;
 % Joint
 DmIT = dG*V_IT*CRIT*MxfIT;
 DmG = CRG*KvG*sqrt(dG*(pR - pMT));
 DmHR = DmMT + DmIT;
-% hJ = (hMT*DmMT+hIT*DmG)/DmHR;
 % Heat recovery
-% hHR = hJ - delta_hHR;
 % Gas cooler, heat transfer
 DVA = MxDVA*CRA;
 s = s0 + k*DVA;
@@ -55,8 +52,7 @@ hBP = h1-delta_h;
 Dd1 = 1/Vc*(DmHR-DmV);
 Dp1 = 1/Taup*(-p1+delta_ph1*h1+delta_pd1*d1);
 Dh1 = 1/(d1*Vc)*(DmHR*hHR-DmV*hBP + DQ1);
-DTA1 = 1/1*(-TA1 + 1/(w+1)*T1 + 1/(1/w+1)*TA0);
-%DTA1 = (w+1)/(2*w/(DVA*cp*dA))*(-TA1 + 1/(w+1)*T1 + 1/(1/w+1)*TA0);
+DTA1 = 1/TauA*(-TA1 + 1/(w+1)*T1 + 1/(1/w+1)*TA0);
 % High pressure valve
 % Receiver
 DdR = 1/VR*(DmV-DmL-DmIT-DmG);
@@ -88,7 +84,6 @@ hBound = 5*10^3;
 dBound = 5;
 TBound = 2;
 DmBound = 0.05;
-% Note: simulate with correct fillingratio noise!
 noise.R = diag([pBound; hBound; pBound; hBound; hBound])*1e3;
 Qcont = diag([pBound*1e1; hBound*1e2; dBound; TBound*1e2;...
     pBound*1e1; hBound*1e1; dBound;...

@@ -1,3 +1,5 @@
+% Script for testing the estimator on simulation or field data
+
 if ~exist('fielddata')
     clearvars
 end
@@ -5,6 +7,8 @@ format long
 % Initializing FMIKit and adding paths
 addpath('C:\Users\u375749\Documents\Thesis\Codes\Linearization')
 addpath('C:\Users\u375749\Documents\Thesis\Codes\MatlabPlant')
+addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\objects_inits')
+addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\matfiles')
 % 'Running modelcreation_simplified.m
 modelcreation_simplified
 % Running substitution_simplified.m
@@ -36,7 +40,7 @@ else
     start = 501;
     finish = length(Y)-1;
 end
-% Y(:,5) = 1/3*[U(delay/2,10)*ones(delay,1); U(1:end-delay,10)] + 2/3*Y(:,2);
+Y(:,5) = 1/3*[U(round(delayh/2),10)*ones(delayh,1); U(1:end-delayh,10)] + 2/3*Y(:,2);
 ny = size(Y,2);
 
 % Running initialization functions for tools
@@ -66,7 +70,7 @@ grecord = NaN(3,finish-start+1);
 faultrecord = NaN(3,finish-start+1);
 recordf = record;
 
-
+% For earlier states
 % DQo = 74e3;
 % DQ = 74e3;
 % DTo = 3;
@@ -81,12 +85,12 @@ for it = start:finish
     xff = kff.markovPredictor(uyf(1:nu),uyf(nu+1:nu+ny),reshape(uyf(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uyf(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uyf(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     Xs = kf.x1 + Xs;
     Xsf = kff.x1 + Xsf;
-    Xs(3) = d1; % TODO
-    Xs(7) = dR; % TODO
-    Xsf(3) = d1f; % TODO
-    Xsf(7) = dR; % TODO
+    % Steady state constraints on unobservable density
+    Xs(3) = d1;
+    Xs(7) = dR;
+    Xsf(3) = d1f;
+    Xsf(7) = dR;
     % ------------ Parameter estimation -----------
-    % Delayed THR!
     TA0 = U(it-delayT,12);
     THR = CoolProp.PropsSI('T','H',U(it-delayh,10),'P',Y(it-delayh,1),'CO2');
     CRG = U(it-delayh,4);
@@ -94,13 +98,14 @@ for it = start:finish
     CRA = U(it-delayT,1);
     DmV = U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
     DQ = DmV*(U(it-delayh,10) - Y(it,2));
-    DT = TBP - U(it,12);
     CRV = U(it,2);
-    phi = [1; CRA; CRV; TA0; CRIT; CRG; THR];
+    phi = [1; CRA; CRV; TA0-273; CRIT; CRG; THR-273];
     out = [DQ TBP]; 
     rls.regression(phi,out);
-%     W = [DQ-phi(2)*rls.t(2)'; rls.t(2)]/DT;
-    % ------------ Fault Operation -----------
+    % Parameter identification gets stuck in local minimum, but this would
+    % be the way:
+    %     W = [DQ-phi(2)*rls.t(2)'; rls.t(2)]/DT;
+    % ------------ Fault Detection -----------
     if it == start
         rls.e = zeros(1,length(rls.e));
     end
@@ -111,15 +116,14 @@ for it = start:finish
             Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
             ew = filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))';
         else
-%             Apol = [0.8006   -1.6012    0.8006]; Cpol = [1.0000   -1.5610    0.6414];
             ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
         end
     else
         ew = 0;
     end
-    [~,fault1] = fdCUSUM.CUSUM(ew(1,end)); % TODO: wrong place
-    [~,fault2] = fdGLR.GLR(ew(1,end)); % TODO: wrong place
-    % Measurement correction: based on EM
+    [~,fault1] = fdCUSUM.CUSUM(ew(1,end));
+    [~,fault2] = fdGLR.GLR(ew(1,end));
+    % ------------ Fault Operation -----------
     if it > start + 20
         if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
             Wsave = reshape(paramrecord(:,it-500-start),length(phi),length(out));
@@ -133,12 +137,13 @@ for it = start:finish
             switchofftime = it;
         end
     end
+    TauFault = param.ResponsibilityTimeConstant*10;
     if faultOperation
         outcor = phi'*Wsave;
-        Tfault = out(2) - outcor(2);
+        Tfault = (1-Ts/TauFault)*Tfault + Ts/TauFault*(out(2) - outcor(2));
         rls.t = Wsave;
     else
-        Tfault = 0;
+        Tfault = 0.5*Tfault;
         outcor = NaN;
     end
     % ------------ Parameter substitutions for new iteration -----------
@@ -181,8 +186,8 @@ for it = start:finish
     % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     statecorrectionf = kff.Kx*kff.e;
-    eigP1 = zeros(nx,1);%eig(kf.P1); TODO
-    eigP1f = zeros(nx,1);%eig(kff.P1); TODO
+    eigP1 = eig(kf.P1); 
+    eigP1f = eig(kff.P1); 
     record(:,it-start+1) = [Xs; eigP1; statecorrection; kf.e; W];
     recordf(:,it-start+1) = [Xsf; eigP1f; statecorrectionf; kff.e; Wf];
     resrecord(:,it-start+1) = rls.e;
