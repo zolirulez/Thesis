@@ -13,7 +13,7 @@ Wt = W';
 norm(Wt\E*Wt-A,Inf)
 disp('The smaller this norm, the more reliable the modal matrix is')
 % Separating real and imaginary values
-Wt = real([Wt(1:5,:); real(Wt(6,:)); imag(Wt(6,:)); Wt(8:end,:)]);
+Wt = real([Wt(1:4,:); real(Wt(5,:)); imag(Wt(5,:)); Wt(7:end,:)]);
 realexpeigA = sign(real(E)).*exp(abs(real(E)));
 realexpeigA(real(E)==0) = 0;
 imagexpeigA = sign(imag(E)).*exp(abs(imag(E)));
@@ -31,7 +31,7 @@ disp(['There are ' num2str(sum(EnC==0))...
     ' a stable pole'])
 expAC = sign(AC).*exp(abs(AC));
 expAC(round(AC,10)==0) = 0;
-GC = TC*G;
+%GC = TC*G;
 % ------------------------ OBSERVABILITY ----------------------------------
 [AO,BO,CO,TO,KO] = obsvf(A,B,C,1e-10);
 % norm(AO-TO*A/TO,Inf)
@@ -45,7 +45,7 @@ disp(['There are ' num2str(sum(EnO==0))...
     ' a stable pole'])
 expAO = sign(AO).*exp(abs(AO));
 expAO(round(AO,10)==0) = 0;
-GO = TO*G;
+%GO = TO*G;
 % -------------------------- PLOTTING -------------------------------------
 % System matrix
 figure(1)
@@ -101,13 +101,13 @@ colorbar
 xlabel(char(u))
 ylabel('z')
 title('BC')
-subplot(244)
-imagesc(GC,[-10^-5 10^-5])
-colormap('jet')
-colorbar
-xlabel(char(d))
-ylabel('z')
-title('GdC')
+% subplot(244)
+% imagesc(GC,[-10^-5 10^-5])
+% colormap('jet')
+% colorbar
+% xlabel(char(d))
+% ylabel('z')
+% title('GdC')
 % Observability analysis
 figure(4)
 subplot(221)
@@ -131,10 +131,10 @@ colorbar
 xlabel(char(u))
 ylabel('z')
 title('BO')
-subplot(244)
-imagesc(GO,[-10^-5 10^-5])
-colormap('jet')
-colorbar
-xlabel(char(d))
-ylabel('z')
-title('GdO')
+% subplot(244)
+% imagesc(GO,[-10^-5 10^-5])
+% colormap('jet')
+% colorbar
+% xlabel(char(d))
+% ylabel('z')
+% title('GdO')

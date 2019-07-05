@@ -8,7 +8,7 @@ modelcreation_simplified
 %% Substitution and normalization
 % substitution
 substitution_simplified
-% normalization
+normalization
 %% Modal, controllability, observability analysis with plots
 analysis
 %% Check the surface plot of partial differentials along a pressure-enthalpy range

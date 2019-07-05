@@ -147,20 +147,20 @@ for it = start:finish
         outcor = NaN;
     end
     % ------------ Parameter substitutions for new iteration -----------
-%     UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
-%     UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
-%     ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
-%     ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
-%     A = ABCDQ(1:nx*nx);
-%     B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
-%     C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-%     D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-%     Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
-%     Af = ABCDQf(1:nx*nx);
-%     Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
-%     Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-%     Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-%     Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+    UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
+    UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
+    ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
+    ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
+    A = ABCDQ(1:nx*nx);
+    B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
+    C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+    D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+    Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+    Af = ABCDQf(1:nx*nx);
+    Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
+    Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+    Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+    Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
     % ------------ Constraints -----------
     hBP = Y(it+1,2);
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
@@ -175,14 +175,14 @@ for it = start:finish
     dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
     Uf(it+1,6) = dBPf;
     % ------------ New setpoint for linearization -----------
-%     u = U(it+1,:)' - U(it,:)';
-%     uf = Uf(it+1,:)' - Uf(it,:)';
-%     y = Y(it+1,1:ny)' - g(YFunction,Xs,U(it,:));
-%     yf = Yf(it+1,1:ny)' - g(YFunction,Xsf,Uf(it,:));
-%     kf.x1 = zeros(nx,1);
-%     kff.x1 = zeros(nx,1);
-%     uy = [u; y; A; B; C; D; Q];
-%     uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
+    u = U(it+1,:)' - U(it,:)';
+    uf = Uf(it+1,:)' - Uf(it,:)';
+    y = Y(it+1,1:ny)' - g(YFunction,Xs,U(it,:));
+    yf = Yf(it+1,1:ny)' - g(YFunction,Xsf,Uf(it,:));
+    kf.x1 = zeros(nx,1);
+    kff.x1 = zeros(nx,1);
+    uy = [u; y; A; B; C; D; Q];
+    uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
     % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     statecorrectionf = kff.Kx*kff.e;
