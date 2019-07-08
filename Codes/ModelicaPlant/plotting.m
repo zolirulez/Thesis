@@ -1,4 +1,5 @@
 load fault_chirp
+load TGC2
 
 t = start:Ts:finish;
 figure(1)
@@ -86,7 +87,7 @@ hold on
 plot(t,recordf(2,:)/1000,'--')
 plot(t,recordf(6,:)/1000,'--')
 plot(t,recordf(8,:)/1000,'--')
-% plot(t(1:it-start+1),hcw(start:it)/1000,'--')
+plot(t,hcw(start:it)/1000,'--')
 hold off
 ylim([-50 600])
 xlabel('Time [s]')
@@ -94,6 +95,7 @@ ylabel('Enthalpy [kJ/kg]')
 subplot(223)
 hold on
 plot(t,recordf(4,:)-273.15,'--')
+plot(t,Tcw(start:it)-273)
 hold off
 % ylim([-10 120])
 xlabel('Time [s]')

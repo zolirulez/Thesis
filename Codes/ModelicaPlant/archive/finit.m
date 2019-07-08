@@ -1,4 +1,4 @@
-function f = finit(Dx)
+function Dx = finit(Dx)
 
 load constants
 
@@ -7,5 +7,3 @@ for it = 1:numel(fields)
     eval(['syms ' fields{it}(1:end-5)]);
     Dx = subs(Dx,eval(['{' num2str(fields{it}(1:end-5)) '}']),c.(fields{it}));
 end
-
-f = Dx;

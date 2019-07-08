@@ -20,7 +20,7 @@ syms delta_Th1                          % From enthalpy to temperature
 syms delta_Td1                          % From density to temperature
 % Delta values
 syms delta_hpIT                         % Isentropic curve delta ratio
-syms delta_hHR delta_h                  % Enthalpy drops
+syms delta_hHR delta_h delta_T          % Enthalpy drops
 % ----------------------- STATIC EQUATIONS --------------------------------
 % Boundary condition
 DmL = DmQ;
@@ -62,6 +62,7 @@ DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG - DmIT*hG);
 % Fan (A refers to air)
 % Disturbances
 Ddelta_h = -1/Tauh*delta_h*0;
+Ddelta_T = -1/Tauh*delta_T;
 % ------------------------- MEASUREMENTS ----------------------------------
 p1m = p1;
 hBPm = hBP;
@@ -84,7 +85,7 @@ hBound = 5*10^3;
 dBound = 5;
 TBound = 2;
 DmBound = 0.05;
-noise.R = diag([pBound; hBound; pBound; hBound; hBound])*1e3;
+noise.R = diag([pBound; hBound; pBound; hBound; hBound])*1e2;
 Qcont = diag([pBound*1e1; hBound*1e2; dBound; TBound*1e-1;...
     pBound*1e1; hBound*1e1; dBound;...
     hBound*1e3]); % TODO
