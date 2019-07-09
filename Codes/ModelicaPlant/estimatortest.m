@@ -40,6 +40,7 @@ if ~exist('fielddata')
 else
     start = 501;
     finish = length(Y)-1;
+    Y(:,4) = Y(:,4) - 100e3;
 end
 hRatio = 1/3;
 Y(:,5) = hRatio*[U(round(delayh/2),10)*ones(delayh,1); U(1:end-delayh,10)] + (1-hRatio)*Y(:,2);
@@ -105,7 +106,7 @@ for it = start:finish
     if any(abs(eig(kf.A - kf.Kx*kf.C)) >= 1) 
         warning('Estimator is not stable')
     end
-    % Steady state constraints on unobservable density
+    % Steady state constraints
     if ~rem(it-1,100)
         Xs = kf.x1 + Xs;
         Xsf = kff.x1 + Xsf;
@@ -121,16 +122,22 @@ for it = start:finish
         Xsf(4) = Xsf(4) + 1e1*exp(TA0-Xsf(4));
         Xs(5) = Xs(5) + 1e6*exp(-Xs(5)/1e3);
         Xsf(5) = Xsf(5) + 1e6*exp(-Xsf(5)/1e3);
-        gain = 1e4;
-        expgain = 1e-5;
-        % TODO
+        gain = 1e5;
+        if detectiontime > 0
+            gain = gain*(1-exp(-(it-detectiontime)/100));
+        end
+        expgain = 1e-6;
+        Xs6 = Xs(6);
+        Xsf6 = Xsf(6);
         for it2 = 1:3
-            Xs(6) = Xs(6) - gain*exp((Xs(6) - hBP)*expgain);
-            Xsf(6) = Xsf(6) - gain*exp((Xsf(6) - hBPf)*expgain);
-            Xs(6) = Xs(6) + gain*exp(-(Xs(6) - 200e3)*expgain);
-            Xsf(6) = Xsf(6) + gain*exp(-(Xsf(6) - 200e3)*expgain);
+            Xs6 = Xs6 - gain*exp((Xs6 - hBP)*expgain);
+            Xsf6 = Xsf6 - gain*exp((Xsf6 - hBPf)*expgain);
+            Xs6 = Xs6 + gain*exp(-(Xs6 - 180e3)*expgain);
+            Xsf6 = Xsf6 + gain*exp(-(Xsf6 - 180e3)*expgain);
             gain = gain*0.9;
         end
+        Xs(6) = 0.01*Xs(6) + 0.99*Xs6;
+        Xsf(6) = 0.01*Xsf(6) + 0.99*Xsf6;
     end
     % ------------ Parameter estimation -----------
     TA0 = U(it-delayT,12);
@@ -173,6 +180,7 @@ for it = start:finish
             if ~detectiontime
                 detectiontime = it;
             end
+            kff.P1 = zeros(nx);
             faultOperation = 1;
         end
         if ~any(faultrecord(3,it-19-start:it-start))
@@ -186,7 +194,7 @@ for it = start:finish
         Tfault = (1-Ts/TauFault)*Tfault + Ts/TauFault*(out(2) - outcor(2));
         rls.t = Wsave;
     else
-        Tfault = 0.5*Tfault;
+        Tfault = 0.8*Tfault;
         outcor = NaN;
     end
     % ------------ Parameter substitutions for new iteration -----------
