@@ -23,7 +23,7 @@ substitution_simplified
 
 % Output function
 YFunction = matlabFunction(ginit(y));
-DXFunction = matlabFunction(finit(Dx));
+% DXFunction = matlabFunction(finit(Dx));
 UFunction = u;
 XFunctionSym = x;
 load uy_sim_faulty_chirp2 % uy_sim_faulty
@@ -41,33 +41,33 @@ else
     start = 501;
     finish = length(Y)-1;
 end
-Y(:,5) = 1/3*[U(round(delayh/2),10)*ones(delayh,1); U(1:end-delayh,10)] + 2/3*Y(:,2);
+hRatio = 1/3;
+Y(:,5) = hRatio*[U(round(delayh/2),10)*ones(delayh,1); U(1:end-delayh,10)] + (1-hRatio)*Y(:,2);
 ny = size(Y,2);
 
 % Running initialization functions for tools
 kfinit_simulink
 rlsinit_simulink
 uy = [zeros(nu+ny,1); reshape(system.A,nx*nx,1); reshape(system.B,nx*nu,1); reshape(system.C,ny*nx,1); reshape(system.D,ny*nu,1); reshape(noise.Q,nx*nx,1)];
-% if exist('fielddata')
-%     Xs(1) = 60e5;
-%     Xs(2) = 400e3;
-%     Xs(3) = 250;
-%     Xs(4) = 60+273;
-%     Xs(5) = 35e5;
-%     Xs(6) = 300e3;
-%     Xs(7) = 250;
-%     Xs(8) = 150e3;
-%     Xs(9) = 0;
-% else
-Xs(4) = 60+273;
-Xsf(4) = Xs(4);
-% end
+if exist('fielddata')
+    Xs(1) = 60e5;
+    Xs(2) = 400e3;
+    Xs(3) = 250;
+    Xs(4) = 60+273;
+    Xs(5) = 35e5;
+    Xs(6) = 300e3;
+    Xs(7) = 250;
+    Xs(8) = 150e3;
+else
+    Xs(4) = 60+273;
+end
 
 % Initial numbers
 TBP = CoolProp.PropsSI('T','P',Y(start,1),'H',Y(start,2),'CO2');
 dR = CoolProp.PropsSI('D','P',Y(start,3),'H',Y(start,4),'CO2');
 d1 = CoolProp.PropsSI('D','P',Y(start,1),'H',Y(start,5),'CO2');
 TA0 = U(start,12);
+hBP = Y(start,2);
 % Parameter estimation (not used now)
 nw = 2;
 W = [5000; 6000];
@@ -101,22 +101,37 @@ for it = start:finish
     % ------------ State estimation -----------
     kf.markovPredictor(uy(1:nu),uy(nu+1:nu+ny),reshape(uy(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uy(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uy(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     kff.markovPredictor(uyf(1:nu),uyf(nu+1:nu+ny),reshape(uyf(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uyf(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uyf(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
-    %     Xs = Xs + Ts*f(DXFunction,Xs,U(it,:));
-    %     Xsf = Xsf + Ts*f(DXFunction,Xsf,U(it,:));
+    % Estimator lability handling
+    if any(abs(eig(kf.A - kf.Kx*kf.C)) >= 1) 
+        warning('Estimator is not stable')
+    end
     % Steady state constraints on unobservable density
     if ~rem(it-1,100)
-        Xsnew = kf.x1 + Xs;
-        Xsfnew = kff.x1 + Xsf;
-        Xsnew(3) = Xsnew(3)*0.4 + d1*0.6;
-        Xsnew(7) = Xsnew(7)*0.4 + dR*0.6;
-        Xsfnew(3) = Xsfnew(3)*0.4 + d1f*0.6;
-        Xsfnew(7) = Xsfnew(7)*0.4 + dR*0.6;
+        Xs = kf.x1 + Xs;
+        Xsf = kff.x1 + Xsf;
+        Xs(3) = Xs(3)*0.8 + d1*0.2;
+        Xs(7) = Xs(7)*0.8 + dR*0.2;
+        Xsf(3) = Xsf(3)*0.8 + d1f*0.2;
+        Xsf(7) = Xsf(7)*0.8 + dR*0.2;
         w = 0.1;
-        Xsnew(4) = Xsnew(4)*0.4 + 0.6*(CoolProp.PropsSI('T','P',Xsnew(1),'H',Xsnew(2),'CO2')/(w+1) + w/(w+1)*TA0);
-        Xsfnew(4) = Xsfnew(4)*0.4 + 0.6*(CoolProp.PropsSI('T','P',Xsfnew(1),'H',Xsfnew(2),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xs(4) = Xs(4)*0.05 + 0.95*(CoolProp.PropsSI('T','P',Xs(1),'H',Xs(2),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xsf(4) = Xsf(4)*0.05 + 0.95*(CoolProp.PropsSI('T','P',Xsf(1),'H',Xsf(2),'CO2')/(w+1) + w/(w+1)*TA0);
+        % Constraints
+        Xs(4) = Xs(4) + 1e1*exp(TA0-Xs(4));
+        Xsf(4) = Xsf(4) + 1e1*exp(TA0-Xsf(4));
+        Xs(5) = Xs(5) + 1e6*exp(-Xs(5)/1e3);
+        Xsf(5) = Xsf(5) + 1e6*exp(-Xsf(5)/1e3);
+        gain = 1e4;
+        expgain = 1e-5;
+        % TODO
+        for it2 = 1:3
+            Xs(6) = Xs(6) - gain*exp((Xs(6) - hBP)*expgain);
+            Xsf(6) = Xsf(6) - gain*exp((Xsf(6) - hBPf)*expgain);
+            Xs(6) = Xs(6) + gain*exp(-(Xs(6) - 200e3)*expgain);
+            Xsf(6) = Xsf(6) + gain*exp(-(Xsf(6) - 200e3)*expgain);
+            gain = gain*0.9;
+        end
     end
-    Xs = 0.99*Xs + 0.01*Xsnew;
-    Xsf = 0.99*Xsf + 0.01*Xsfnew;
     % ------------ Parameter estimation -----------
     TA0 = U(it-delayT,12);
     THR = CoolProp.PropsSI('T','H',U(it-delayh,10),'P',Y(it-delayh,1),'CO2');
@@ -201,7 +216,7 @@ for it = start:finish
     TBPf = TBP - Tfault;
     hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
     Yf(it+1,2) = hBPf;
-    Yf(it+1,5) = Y(it+1,5) - 2/3*(hBP - hBPf);
+    Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
     d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
     dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
     Uf(it+1,6) = dBPf;
@@ -209,10 +224,12 @@ for it = start:finish
     if ~rem(it-1,100)
         kf.x1 = zeros(nx,1);
         kff.x1 = zeros(nx,1);
+        kf.P1 = kf.P1*1.5;
+        kff.P1 = kff.P1*1.5;
         inputSample = U(it,:)';
         inputSamplef = Uf(it,:)';
-        measSample = g(YFunction,Xsnew,U(it,:));
-        measSamplef = g(YFunction,Xsfnew,Uf(it,:));
+        measSample = g(YFunction,Xs,U(it,:));
+        measSamplef = g(YFunction,Xsf,Uf(it,:));
     end
     measOld = meas;
     measfOld = measf;

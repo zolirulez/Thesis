@@ -66,11 +66,11 @@ xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 grid on
 
-figure(3)
-plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))
-legend('s_0','k')
-xlabel('Time [s]')
-ylabel('Parameters')
+% figure(3)
+% plot(t,record(nx+nx+nx+ny+1:nx+nx+nx+ny+2,:))
+% legend('s_0','k')
+% xlabel('Time [s]')
+% ylabel('Parameters')
 
 figure(1)
 load hcw_chirp
@@ -87,7 +87,9 @@ hold on
 plot(t,recordf(2,:)/1000,'--')
 plot(t,recordf(6,:)/1000,'--')
 plot(t,recordf(8,:)/1000,'--')
-plot(t,hcw(start:it)/1000,'--')
+if ~exist('fielddata')
+    plot(t,hcw(start:it)/1000,'--')
+end
 hold off
 ylim([-50 600])
 xlabel('Time [s]')
@@ -95,7 +97,9 @@ ylabel('Enthalpy [kJ/kg]')
 subplot(223)
 hold on
 plot(t,recordf(4,:)-273.15,'--')
-plot(t,Tcw(start:it)-273)
+if ~exist('fielddata')
+    plot(t,Tcw(start:it)-273.15-3)
+end
 hold off
 % ylim([-10 120])
 xlabel('Time [s]')
@@ -109,6 +113,31 @@ ylim([0 900])
 xlabel('Time [s]')
 ylabel('Density [kg/m^3]')
 
+if ~exist('fielddata')
+    figure(4)
+    clf
+    subplot(121)
+    hold on
+    plot(smooth(hcw(start+500:it)/1000,100),smooth(record(2,501:end)/1000,100))
+    plot(smooth(hcw(start+500:it)/1000,100),smooth(recordf(2,501:end)/1000,100))
+    plot(linspace(340,410,2),linspace(340,410,2))
+    hold off
+    xlabel('Weighted average of enthalpy states [kJ/kg]')
+    ylabel('Estimations [kJ/kg]')
+    legend('Original','Reestimated')
+    title('Lissajous figure for enthalpy')
+    subplot(122)
+    hold on
+    plot(smooth(Tcw(start+500:it)-273.15-3,100),smooth(record(4,501:end)-273.15-3,100))
+    plot(smooth(Tcw(start+500:it)-273.15-3,100),smooth(recordf(4,501:end)-273.15-3,100))
+    plot(linspace(25,50,2),linspace(25,50,2))
+    hold off
+    xlabel('Weighted average of enthalpy states converted to temperature [C]')
+    ylabel('Estimations [C]')
+    legend('Original','Reestimated')
+    title('Lissajous figure for temperature')
+    hold off
+end
 
 % figure(3)
 % hold on
@@ -249,3 +278,4 @@ if exist('fielddata')
     plot(start+1:it,ew);
     title('Whitened residual')
 end
+

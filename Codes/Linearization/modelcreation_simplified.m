@@ -85,9 +85,13 @@ hBound = 5*10^3;
 dBound = 5;
 TBound = 2;
 DmBound = 0.05;
-noise.R = diag([pBound; hBound; pBound; hBound; hBound])*1e2;
-Qcont = diag([pBound*1e1; hBound*1e2; dBound; TBound*1e-1;...
-    pBound*1e1; hBound*1e1; dBound;...
+faultFactor = 1;
+if exist('fielddata')
+    faultFactor = 1e3;
+end
+noise.R = diag([pBound; hBound; pBound; hBound*faultFactor; hBound])*1e3;
+Qcont = diag([pBound*1e1; hBound*1e2; dBound; TBound*1e-2;...
+    pBound*1e1; hBound*1e2; dBound;...
     hBound*1e3]); % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
