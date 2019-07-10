@@ -9,7 +9,7 @@ hold on
 plot(t,record(1,:)/1e5)
 plot(t,record(5,:)/1e5)
 hold off
-ylim([30 100])
+ylim([20 100])
 xlabel('Time [s]')
 ylabel('Pressure [bar]')
 subplot(222)
@@ -79,9 +79,6 @@ hold on
 plot(t,recordf(1,:)/1e5,'--')
 plot(t,recordf(5,:)/1e5,'--')
 hold off
-ylim([30 100])
-xlabel('Time [s]')
-ylabel('Pressure [bar]')
 subplot(222)
 hold on
 plot(t,recordf(2,:)/1000,'--')
@@ -91,9 +88,6 @@ if ~exist('fielddata')
     plot(t,hcw(start:it)/1000,'--')
 end
 hold off
-ylim([-50 600])
-xlabel('Time [s]')
-ylabel('Enthalpy [kJ/kg]')
 subplot(223)
 hold on
 plot(t,recordf(4,:)-273.15,'--')
@@ -101,7 +95,7 @@ if ~exist('fielddata')
     plot(t,Tcw(start:it)-273.15-3)
 end
 hold off
-% ylim([-10 120])
+ylim([0 50])
 xlabel('Time [s]')
 ylabel('Temperature [C]')
 subplot(224)
@@ -109,9 +103,6 @@ hold on
 plot(t,recordf(3,:),'--')
 plot(t,recordf(7,:),'--')
 hold off
-ylim([0 900])
-xlabel('Time [s]')
-ylabel('Density [kg/m^3]')
 
 if ~exist('fielddata')
     figure(4)

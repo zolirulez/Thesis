@@ -2,6 +2,9 @@
 
 if ~exist('fielddata')
     clearvars
+else
+    clearvars
+    load fielddata
 end
 format long
 % Initializing FMIKit and adding paths
@@ -120,11 +123,11 @@ for it = start:finish
         % Constraints
         Xs(4) = Xs(4) + 1e1*exp(TA0-Xs(4));
         Xsf(4) = Xsf(4) + 1e1*exp(TA0-Xsf(4));
-        Xs(5) = Xs(5) + 1e6*exp(-Xs(5)/1e3);
-        Xsf(5) = Xsf(5) + 1e6*exp(-Xsf(5)/1e3);
+        Xs(7) = Xs(7) + 1e1*exp(-Xs(7)/1e5);
+        Xsf(7) = Xsf(7) + 1e1*exp(-Xsf(7)/1e5);
         gain = 1e5;
         if detectiontime > 0
-            gain = gain*(1-exp(-(it-detectiontime)/100));
+            gain = gain*(1-exp(-(it-detectiontime)/10));
         end
         expgain = 1e-6;
         Xs6 = Xs(6);
@@ -132,12 +135,12 @@ for it = start:finish
         for it2 = 1:3
             Xs6 = Xs6 - gain*exp((Xs6 - hBP)*expgain);
             Xsf6 = Xsf6 - gain*exp((Xsf6 - hBPf)*expgain);
-            Xs6 = Xs6 + gain*exp(-(Xs6 - 180e3)*expgain);
-            Xsf6 = Xsf6 + gain*exp(-(Xsf6 - 180e3)*expgain);
-            gain = gain*0.9;
+            Xs6 = Xs6 + gain*exp(-(Xs6 - 200e3)*expgain);
+            Xsf6 = Xsf6 + gain*exp(-(Xsf6 - 200e3)*expgain);
+            gain = gain*0.8;
         end
-        Xs(6) = 0.01*Xs(6) + 0.99*Xs6;
-        Xsf(6) = 0.01*Xsf(6) + 0.99*Xsf6;
+        Xs(6) = 0.8*Xs(6) + 0.2*Xs6;
+        Xsf(6) = 0.8*Xsf(6) + 0.2*Xsf6;
     end
     % ------------ Parameter estimation -----------
     TA0 = U(it-delayT,12);
