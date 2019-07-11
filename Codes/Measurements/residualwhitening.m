@@ -1,5 +1,5 @@
 clearvars
-fielddata = 0;
+fielddata = 1;
 if fielddata
     load resid_normal_fielddata
 else

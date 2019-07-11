@@ -167,15 +167,15 @@ for it = start:finish
         if exist('fielddata')
 %             Apol = [1 -0.9886]; Bpol = [-1.078]; Cpol = [1 -0.3908 0.04806 0.3148];
             Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
-            ew = filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))';
+            ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
         else
             ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
         end
     else
         ew = 0;
     end
-    [~,fault1] = fdCUSUM.CUSUM(ew(1,end));
-    [~,fault2] = fdGLR.GLR(ew(1,end));
+    [~,fault1] = fdCUSUM.CUSUM(ew(end,1));
+    [~,fault2] = fdGLR.GLR(ew(end,1));
     % ------------ Fault Operation -----------
     if it > start + 20
         if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
@@ -201,23 +201,23 @@ for it = start:finish
         outcor = NaN;
     end
     % ------------ Parameter substitutions for new iteration -----------
-    if ~rem(it-1,100)
-        paramSampleTime = it;
-        UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
-        UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
-        ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
-        ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
-        A = ABCDQ(1:nx*nx);
-        B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
-        C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-        D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-        Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
-        Af = ABCDQf(1:nx*nx);
-        Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
-        Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-        Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-        Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
-    end
+%     if ~rem(it-1,100)
+%         paramSampleTime = it;
+%         UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
+%         UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
+%         ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
+%         ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
+%         A = ABCDQ(1:nx*nx);
+%         B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
+%         C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+%         D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+%         Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+%         Af = ABCDQf(1:nx*nx);
+%         Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
+%         Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+%         Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+%         Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+%     end
     % ------------ Constraints -----------
     hBP = Y(it+1,2);
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
@@ -232,30 +232,26 @@ for it = start:finish
     dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
     Uf(it+1,6) = dBPf;
     % ------------ New setpoint for linearization -----------
-    if ~rem(it-1,100)
-        kf.x1 = zeros(nx,1);
-        kff.x1 = zeros(nx,1);
-        kf.P1 = kf.P1*1.5;
-        kff.P1 = kff.P1*1.5;
-        inputSample = U(it,:)';
-        inputSamplef = Uf(it,:)';
-        measSample = g(YFunction,Xs,U(it,:));
-        measSamplef = g(YFunction,Xsf,Uf(it,:));
-    end
-    measOld = meas;
-    measfOld = measf;
-    meas = Y(it+1,1:ny)';
-    measf = Yf(it+1,1:ny)';
-%     meas(2) = 0.01*meas(2) + 0.99*measOld(2);
-%     meas(5) = 0.01*meas(5) + 0.99*measOld(5);
-%     measf(2) = 0.01*measf(2) + 0.99*measfOld(2);
-%     measf(5) = 0.01*measf(5) + 0.99*measfOld(5);
-    u = U(it+1,:)' - inputSample;
-    uf = Uf(it+1,:)' - inputSamplef;
-    y = meas - measSample;
-    yf = measf - measSamplef;
-    uy = [u; y; A; B; C; D; Q];
-    uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
+%     if ~rem(it-1,100)
+%         kf.x1 = zeros(nx,1);
+%         kff.x1 = zeros(nx,1);
+%         kf.P1 = kf.P1*1.5;
+%         kff.P1 = kff.P1*1.5;
+%         inputSample = U(it,:)';
+%         inputSamplef = Uf(it,:)';
+%         measSample = g(YFunction,Xs,U(it,:));
+%         measSamplef = g(YFunction,Xsf,Uf(it,:));
+%     end
+%     measOld = meas;
+%     measfOld = measf;
+%     meas = Y(it+1,1:ny)';
+%     measf = Yf(it+1,1:ny)';
+%     u = U(it+1,:)' - inputSample;
+%     uf = Uf(it+1,:)' - inputSamplef;
+%     y = meas - measSample;
+%     yf = measf - measSamplef;
+%     uy = [u; y; A; B; C; D; Q];
+%     uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
     % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     statecorrectionf = kff.Kx*kff.e;

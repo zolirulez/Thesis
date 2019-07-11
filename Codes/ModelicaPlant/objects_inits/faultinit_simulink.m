@@ -7,7 +7,7 @@ param.WindowLength = 100;
 % Variances are better bigger, like 5 times: residuals are not entirely
 % white
 if exist('fielddata')
-    variance = 5e6; % 6e3; %1.8614e+06;
+    variance = 4.5e5; % 6e3; %1.8614e+06;
     param.InitialGuess = [-sqrt(variance)*5,param.WindowLength/variance];
     param.Threshold = param.WindowLength/variance*1000;
 else
@@ -23,17 +23,13 @@ fdGLR.initialize(meanFD,variance,method,param);
 clear param
 fdCUSUM = FaultDetector;
 if exist('fielddata')
-    meanFD.m1 = -sqrt(variance)*5;
+    meanFD.m1 = -250; %-sqrt(variance)*5;
 else
-    meanFD.m1 = sqrt(variance)*5;
+    meanFD.m1 = 2e4; % sqrt(variance)*5;
 end
 % param.FalseAlarmTime = 1e20;
 % param.InitialGuess = [-400,100];
-if exist('fielddata')
-    param.Threshold = 1/variance;
-else
-    param.Threshold = 1/variance;
-end
+param.Threshold = meanFD.m1^2/2/variance*100;
 method = 'CUSUM';
 fdCUSUM.initialize(meanFD,variance,method,param);
 % ---------- EM ---------------

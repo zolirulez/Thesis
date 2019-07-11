@@ -146,7 +146,7 @@ xlabel('Time [s]')
 ylabel('Normalized parameters')
 ylim([-20 20])
 subplot(312)
-plot(start:finish,(resrecord./max(resrecord(:,5:end)')')')
+plot(start:finish,(resrecord./max(abs(resrecord(:,5:end)'))')')
 grid on
 ylim([-5 1])
 xlabel('Time [s]')
@@ -185,11 +185,11 @@ global var_resid FalseAlarmTime
 if ~exist('fielddata')
     resid = resrecord(end,:);
 else
-    resid = [0 ew];
+    resid = [0; ew];
 end
 resid(1) = 0;
 figure(11)
-resid_normal = [0 resid(1,2:round(length(Y)/5))];
+resid_normal = [0; resid(2:round(length(Y)/5),1)];
 subplot(221)
 autocorr(detrend(resid_normal))
 subplot(222)
@@ -227,7 +227,7 @@ relparamstd2 = sqrt(diag(paramvar2))./paramrecord(1+length(phi):2*length(phi),de
 % --------------- Detection ----------------------
 figure(13)
 subplot(311)
-plot(start:finish,(resrecord./max(resrecord(:,5:end)')')')
+plot(start:finish,(resrecord./max(abs(resrecord(:,5:end)'))')')
 ylim([-20 20])
 grid on
 ylabel('Residual')
@@ -238,7 +238,7 @@ ylabel('g function')
 xlabel('Time [s]')
 title('CUSUM')
 subplot(337)
-plot(start:finish,grecord(1,:)'>fdCUSUM.h)
+plot(start:finish,grecord(1,:)'>fdCUSUM.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
 % GLR
@@ -267,6 +267,7 @@ xlabel('Time [s]')
 if exist('fielddata')
     figure(15)
     plot(start+1:it,ew);
-    title('Whitened residual')
+    ylabel('Whitened residual')
+    xlabel('Time [s]')
 end
 
