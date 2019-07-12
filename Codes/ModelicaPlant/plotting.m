@@ -187,6 +187,7 @@ if ~exist('fielddata')
 else
     resid = [0; ew];
 end
+resid = resid(:);
 resid(1) = 0;
 figure(11)
 resid_normal = [0; resid(2:round(length(Y)/5),1)];

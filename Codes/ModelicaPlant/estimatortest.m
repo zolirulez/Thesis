@@ -57,13 +57,13 @@ if exist('fielddata')
     Xs(1) = 60e5;
     Xs(2) = 400e3;
     Xs(3) = 250;
-    Xs(4) = 60+273;
+    Xs(4) = 40+273;
     Xs(5) = 35e5;
     Xs(6) = 300e3;
     Xs(7) = 250;
     Xs(8) = 150e3;
 else
-    Xs(4) = 60+273;
+    Xs(4) = 40+273;
 end
 
 % Initial numbers
@@ -97,6 +97,7 @@ recordf = record;
 % DT = 3;
 meas = Y(start,:);
 measf = Yf(start,:);
+TsParam = 100;
 
 for it = start:finish
     if ~rem(it,100)
@@ -110,37 +111,35 @@ for it = start:finish
         warning('Estimator is not stable')
     end
     % Steady state constraints
-    if ~rem(it-1,100)
+    if ~rem(it-1,TsParam)
         Xs = kf.x1 + Xs;
         Xsf = kff.x1 + Xsf;
-        Xs(3) = Xs(3)*0.8 + d1*0.2;
-        Xs(7) = Xs(7)*0.8 + dR*0.2;
-        Xsf(3) = Xsf(3)*0.8 + d1f*0.2;
-        Xsf(7) = Xsf(7)*0.8 + dR*0.2;
+        Xs(3) = Xs(3)*0.9 + d1*0.1;
+        Xs(7) = Xs(7)*0.9 + dR*0.1;
+        Xsf(3) = Xsf(3)*0.9 + d1f*0.1;
+        Xsf(7) = Xsf(7)*0.9 + dR*0.1;
         w = 0.1;
-        Xs(4) = Xs(4)*0.05 + 0.95*(CoolProp.PropsSI('T','P',Xs(1),'H',Xs(2),'CO2')/(w+1) + w/(w+1)*TA0);
-        Xsf(4) = Xsf(4)*0.05 + 0.95*(CoolProp.PropsSI('T','P',Xsf(1),'H',Xsf(2),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xs(4) = Xs(4)*0.9 + 0.1*(CoolProp.PropsSI('T','P',Y(it,1),'H',Y(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xsf(4) = Xsf(4)*0.9 + 0.1*(CoolProp.PropsSI('T','P',Yf(it,1),'H',Yf(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
         % Constraints
-        Xs(4) = Xs(4) + 1e1*exp(TA0-Xs(4));
-        Xsf(4) = Xsf(4) + 1e1*exp(TA0-Xsf(4));
-        Xs(7) = Xs(7) + 1e1*exp(-Xs(7)/1e5);
-        Xsf(7) = Xsf(7) + 1e1*exp(-Xsf(7)/1e5);
-        gain = 1e5;
-        if detectiontime > 0
-            gain = gain*(1-exp(-(it-detectiontime)/10));
-        end
-        expgain = 1e-6;
-        Xs6 = Xs(6);
-        Xsf6 = Xsf(6);
-        for it2 = 1:3
-            Xs6 = Xs6 - gain*exp((Xs6 - hBP)*expgain);
-            Xsf6 = Xsf6 - gain*exp((Xsf6 - hBPf)*expgain);
-            Xs6 = Xs6 + gain*exp(-(Xs6 - 200e3)*expgain);
-            Xsf6 = Xsf6 + gain*exp(-(Xsf6 - 200e3)*expgain);
-            gain = gain*0.8;
-        end
-        Xs(6) = 0.8*Xs(6) + 0.2*Xs6;
-        Xsf(6) = 0.8*Xsf(6) + 0.2*Xsf6;
+        Xs(4) = -constrainer(-Xs(4),-TA0,2);
+        Xsf(4) = -constrainer(-Xsf(4),-TA0,2);
+        Xs(7) = -constrainer(-Xs(7),-50,20);
+        Xsf(7) = -constrainer(-Xsf(7),-50,20);
+        Xs(7) = constrainer(Xs(7),800,100);
+        Xsf(7) = constrainer(Xsf(7),800,100);
+%         Xs(4) = max(TA0,Xs(4));
+%         Xsf(4) = max(TA0,Xsf(4));
+%         Xs(7) = max(50,Xs(7));
+%         Xsf(7) = max(50,Xsf(7));
+%         Xs6 = max(min(Xs(6),hBP),200e3);
+%         Xsf6 = max(min(Xsf(6),hBPf),200e3);
+%         Xs(6) = 0.1*Xs(6) + 0.9*Xs6;
+%         Xsf(6) = 0.1*Xsf(6) + 0.9*Xsf6;
+        Xs(6) = constrainer(Xs(6),hBP,10e3);
+        Xsf(6) = constrainer(Xsf(6),hBPf,10e3);
+        Xs(6) = -constrainer(-Xs(6),-200e3,10e3);
+        Xsf(6) = -constrainer(-Xsf(6),-200e3,10e3);
     end
     % ------------ Parameter estimation -----------
     TA0 = U(it-delayT,12);
@@ -162,7 +161,7 @@ for it = start:finish
     if it == start
         rls.e = zeros(1,length(rls.e));
     end
-    [~,fault3] = fdEM.EM(rls.e');
+    [~,fault3] = fdEM.detect(rls.e');
     if it > start+10
         if exist('fielddata')
 %             Apol = [1 -0.9886]; Bpol = [-1.078]; Cpol = [1 -0.3908 0.04806 0.3148];
@@ -174,8 +173,8 @@ for it = start:finish
     else
         ew = 0;
     end
-    [~,fault1] = fdCUSUM.CUSUM(ew(end,1));
-    [~,fault2] = fdGLR.GLR(ew(end,1));
+    [~,fault1] = fdCUSUM.detect(ew(end,1));
+    [~,fault2] = fdGLR.detect(ew(end,1));
     % ------------ Fault Operation -----------
     if it > start + 20
         if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
@@ -191,7 +190,7 @@ for it = start:finish
             switchofftime = it;
         end
     end
-    TauFault = param.ResponsibilityTimeConstant*10;
+    TauFault = TsParam; %param.ResponsibilityTimeConstant*10;
     if faultOperation
         outcor = phi'*Wsave;
         Tfault = (1-Ts/TauFault)*Tfault + Ts/TauFault*(out(2) - outcor(2));
@@ -201,23 +200,23 @@ for it = start:finish
         outcor = NaN;
     end
     % ------------ Parameter substitutions for new iteration -----------
-%     if ~rem(it-1,100)
-%         paramSampleTime = it;
-%         UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
-%         UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
-%         ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
-%         ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
-%         A = ABCDQ(1:nx*nx);
-%         B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
-%         C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-%         D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-%         Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
-%         Af = ABCDQf(1:nx*nx);
-%         Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
-%         Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
-%         Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
-%         Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
-%     end
+    if ~rem(it-1,TsParam)
+        paramSampleTime = it;
+        UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
+        UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
+        ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
+        ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
+        A = ABCDQ(1:nx*nx);
+        B = ABCDQ(nx*nx+1:nx*nx+nx*nu);
+        C = ABCDQ(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+        D = ABCDQ(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+        Q = ABCDQ(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+        Af = ABCDQf(1:nx*nx);
+        Bf = ABCDQf(nx*nx+1:nx*nx+nx*nu);
+        Cf = ABCDQf(nx*nx+nx*nu+1:nx*nx+nx*nu+ny*nx);
+        Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
+        Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
+    end
     % ------------ Constraints -----------
     hBP = Y(it+1,2);
     TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
@@ -232,26 +231,26 @@ for it = start:finish
     dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
     Uf(it+1,6) = dBPf;
     % ------------ New setpoint for linearization -----------
-%     if ~rem(it-1,100)
-%         kf.x1 = zeros(nx,1);
-%         kff.x1 = zeros(nx,1);
-%         kf.P1 = kf.P1*1.5;
-%         kff.P1 = kff.P1*1.5;
-%         inputSample = U(it,:)';
-%         inputSamplef = Uf(it,:)';
-%         measSample = g(YFunction,Xs,U(it,:));
-%         measSamplef = g(YFunction,Xsf,Uf(it,:));
-%     end
-%     measOld = meas;
-%     measfOld = measf;
-%     meas = Y(it+1,1:ny)';
-%     measf = Yf(it+1,1:ny)';
-%     u = U(it+1,:)' - inputSample;
-%     uf = Uf(it+1,:)' - inputSamplef;
-%     y = meas - measSample;
-%     yf = measf - measSamplef;
-%     uy = [u; y; A; B; C; D; Q];
-%     uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
+    if ~rem(it-1,TsParam)
+        kf.x1 = zeros(nx,1);
+        kff.x1 = zeros(nx,1);
+        kf.P1 = kf.P1*2;
+        kff.P1 = kff.P1*2;
+        inputSample = U(it,:)';
+        inputSamplef = Uf(it,:)';
+        measSample = g(YFunction,Xs,U(it,:));
+        measSamplef = g(YFunction,Xsf,Uf(it,:));
+    end
+    measOld = meas;
+    measfOld = measf;
+    meas = Y(it+1,1:ny)';
+    measf = Yf(it+1,1:ny)';
+    u = U(it+1,:)' - inputSample;
+    uf = Uf(it+1,:)' - inputSamplef;
+    y = meas - measSample;
+    yf = measf - measSamplef;
+    uy = [u; y; A; B; C; D; Q];
+    uyf = [uf; yf; Af; Bf; Cf; Df; Qf];
     % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     statecorrectionf = kff.Kx*kff.e;
