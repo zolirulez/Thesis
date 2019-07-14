@@ -231,7 +231,7 @@ subplot(311)
 plot(start:finish,(resrecord./max(abs(resrecord(:,5:end)'))')')
 ylim([-20 20])
 grid on
-ylabel('Residual')
+ylabel('Normalized residual')
 xlabel('Time [s]')
 subplot(334)
 plot(start:finish,grecord(1,:)',start:finish,fdCUSUM.h*rectwin(length(Y)-start),'r--')

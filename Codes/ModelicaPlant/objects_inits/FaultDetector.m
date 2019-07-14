@@ -67,7 +67,7 @@ classdef FaultDetector < matlab.mixin.Copyable
             fd.Method = Method;
             fd.m0 = Mean.m0;
             fd.v = Variance;
-            switch Method
+            switch fd.Method
                 case 'CUSUM'
                     fd.m1 = Mean.m1;
                     fd.g = 0;
@@ -78,6 +78,9 @@ classdef FaultDetector < matlab.mixin.Copyable
                     fd.G = 1/(2*fd.v*fd.M);
                     fd.rv = fd.m0*ones(1,fd.M);
                     fd.mds = sum(fd.rv - fd.m0);
+                    if isfield(Mean,'m1')
+                        fd.m1 = Mean.m1;
+                    end
                 case 'EM'
                     D = length(fd.m0);
                     fd.g = 0.05;
@@ -94,6 +97,12 @@ classdef FaultDetector < matlab.mixin.Copyable
             else
                 fd.thresholdInitialization(FurtherParameters);
             end
+            switch fd.Method
+                case 'CUSUM'
+                    fd.ARL;
+                case 'GLR'
+                    fd.GLRdesign;
+            end
         end
         function thresholdInitialization(fd,FurtherParameters)
             switch fd.Method
@@ -103,14 +112,12 @@ classdef FaultDetector < matlab.mixin.Copyable
                     m1_h = fsolve(@fd.GLRdesign4fsolve,InitialGuess);
                     fd.m1 = m1_h(1);
                     fd.h = m1_h(2);
-                    fd.GLRdesign;
                 case 'CUSUM'
                     fd.Tfalse = FurtherParameters.FalseAlarmTime;
                     InitialGuess = FurtherParameters.InitialGuess;
                     m1_h = fsolve(@fd.ARL4fsolve,InitialGuess);
                     fd.m1 = m1_h(1);
                     fd.h = m1_h(2);
-                    fd.ARL;
             end
         end
         function resid = ARL4fsolve(fd,m1_h)
@@ -155,8 +162,8 @@ classdef FaultDetector < matlab.mixin.Copyable
             PF = 1 - chi2cdf(2*h, dof);
             PD = 1 - ncx2cdf(2*h, dof,lambda);
             % Returns
-            logPmissed = 1 - PD;
-            logPfalse = PF;
+            logPmissed = log(1 - PD);
+            logPfalse = log(PF);
             residMissed = logPmissed;
             residFalse = logPfalse - log(FalseAlarmProbability);
             resid = [residMissed; residFalse];

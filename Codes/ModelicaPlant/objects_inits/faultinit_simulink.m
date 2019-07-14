@@ -4,17 +4,21 @@
 fdGLR = FaultDetector;
 meanFD.m0 = 0;
 param.WindowLength = 100;
-% Variances are better bigger, like 5 times: residuals are not entirely
-% white
+if exist('fielddata')
+    meanFD.m1 = -250; %-sqrt(variance)*5;
+else
+    meanFD.m1 = 2e4; % sqrt(variance)*5;
+end
+% Variances are better bigger: residuals are not entirely white
 if exist('fielddata')
     variance = 4.5e5; % 6e3; %1.8614e+06;
-    param.InitialGuess = [-sqrt(variance)*5,param.WindowLength/variance];
-    param.Threshold = param.WindowLength/variance*1000;
+    % 20 percent should be faulty in the whole window to fire
+    param.Threshold = 1/(2*variance*param.WindowLength)*(meanFD.m1*param.WindowLength*0.2)^2;
 else
     variance = 5e6;
-    param.InitialGuess = [sqrt(variance)*5,param.WindowLength/variance];
-    param.Threshold = param.WindowLength/variance*5;
+    param.Threshold = 1/(2*variance*param.WindowLength)*(meanFD.m1*param.WindowLength*0.2)^2;
 end
+param.InitialGuess = [meanFD.m1,param.Threshold];
 param.FalseAlarmProbability = 1e-4;
 method = 'GLR';
 fdGLR.initialize(meanFD,variance,method,param);
@@ -22,14 +26,10 @@ fdGLR.initialize(meanFD,variance,method,param);
 % CUSUM does not work currently
 clear param
 fdCUSUM = FaultDetector;
-if exist('fielddata')
-    meanFD.m1 = -250; %-sqrt(variance)*5;
-else
-    meanFD.m1 = 2e4; % sqrt(variance)*5;
-end
-% param.FalseAlarmTime = 1e20;
-% param.InitialGuess = [-400,100];
-param.Threshold = meanFD.m1^2/2/variance*100;
+% 20 pieces of mean value should be measured in order to fire
+param.FalseAlarmTime = 1e4;
+param.Threshold = meanFD.m1^2/2/variance*20;
+param.InitialGuess = [meanFD.m1,param.Threshold];
 method = 'CUSUM';
 fdCUSUM.initialize(meanFD,variance,method,param);
 % ---------- EM ---------------

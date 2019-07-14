@@ -41,9 +41,9 @@ if ~exist('fielddata')
     start = 2001;
     finish = 10000;
 else
-    start = 501;
+    start = 1001;
     finish = length(Y)-1;
-    Y(:,4) = Y(:,4) - 100e3;
+    Y(:,4) = Y(:,4) - 170e3;
 end
 hRatio = 1/3;
 Y(:,5) = hRatio*[U(round(delayh/2),10)*ones(delayh,1); U(1:end-delayh,10)] + (1-hRatio)*Y(:,2);
@@ -91,13 +91,10 @@ faultrecord = NaN(3,finish-start+1);
 recordf = record;
 
 % For earlier states
-% DQo = 74e3;
-% DQ = 74e3;
-% DTo = 3;
-% DT = 3;
 meas = Y(start,:);
 measf = Yf(start,:);
-TsParam = 100;
+TsParam = 200;
+constrainedEstimator = 1;
 
 for it = start:finish
     if ~rem(it,100)
@@ -107,39 +104,33 @@ for it = start:finish
     kf.markovPredictor(uy(1:nu),uy(nu+1:nu+ny),reshape(uy(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uy(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uy(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     kff.markovPredictor(uyf(1:nu),uyf(nu+1:nu+ny),reshape(uyf(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uyf(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uyf(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     % Estimator lability handling
-    if any(abs(eig(kf.A - kf.Kx*kf.C)) >= 1) 
+    if any(abs(eig(kff.A - kff.Kx*kff.C)) >= 1) 
         warning('Estimator is not stable')
     end
     % Steady state constraints
     if ~rem(it-1,TsParam)
         Xs = kf.x1 + Xs;
         Xsf = kff.x1 + Xsf;
-        Xs(3) = Xs(3)*0.9 + d1*0.1;
-        Xs(7) = Xs(7)*0.9 + dR*0.1;
-        Xsf(3) = Xsf(3)*0.9 + d1f*0.1;
-        Xsf(7) = Xsf(7)*0.9 + dR*0.1;
-        w = 0.1;
-        Xs(4) = Xs(4)*0.9 + 0.1*(CoolProp.PropsSI('T','P',Y(it,1),'H',Y(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
-        Xsf(4) = Xsf(4)*0.9 + 0.1*(CoolProp.PropsSI('T','P',Yf(it,1),'H',Yf(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
-        % Constraints
-        Xs(4) = -constrainer(-Xs(4),-TA0,2);
-        Xsf(4) = -constrainer(-Xsf(4),-TA0,2);
-        Xs(7) = -constrainer(-Xs(7),-50,20);
-        Xsf(7) = -constrainer(-Xsf(7),-50,20);
-        Xs(7) = constrainer(Xs(7),800,100);
-        Xsf(7) = constrainer(Xsf(7),800,100);
-%         Xs(4) = max(TA0,Xs(4));
-%         Xsf(4) = max(TA0,Xsf(4));
-%         Xs(7) = max(50,Xs(7));
-%         Xsf(7) = max(50,Xsf(7));
-%         Xs6 = max(min(Xs(6),hBP),200e3);
-%         Xsf6 = max(min(Xsf(6),hBPf),200e3);
-%         Xs(6) = 0.1*Xs(6) + 0.9*Xs6;
-%         Xsf(6) = 0.1*Xsf(6) + 0.9*Xsf6;
-        Xs(6) = constrainer(Xs(6),hBP,10e3);
-        Xsf(6) = constrainer(Xsf(6),hBPf,10e3);
-        Xs(6) = -constrainer(-Xs(6),-200e3,10e3);
-        Xsf(6) = -constrainer(-Xsf(6),-200e3,10e3);
+        % Equilibrium constraints
+        dR = CoolProp.PropsSI('D','P',Y(it,3),'H',Y(it,4),'CO2');
+        Xs(3) = Xs(3)*0.2 + d1*0.8;
+        Xs(7) = Xs(7)*0.2 + dR*0.8;
+        Xsf(3) = Xsf(3)*0.2 + d1f*0.8;
+        Xsf(7) = Xsf(7)*0.2 + dR*0.8;
+        w = 0.11;
+        Xs(4) = Xs(4)*0.2 + 0.8*(CoolProp.PropsSI('T','P',Y(it,1),'H',Y(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xsf(4) = Xsf(4)*0.2 + 0.8*(CoolProp.PropsSI('T','P',Yf(it,1),'H',Yf(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
+        if constrainedEstimator
+            % Extreme constraints
+            Xs(4) = -constrainer(-Xs(4),-TA0,2);
+            Xsf(4) = -constrainer(-Xsf(4),-TA0,2);
+            Xs(7) = -constrainer(-Xs(7),-80,20);
+            Xsf(7) = -constrainer(-Xsf(7),-80,20);
+            Xs(6) = constrainer(Xs(6),hBP,10e3);
+            Xsf(6) = constrainer(Xsf(6),hBPf,10e3);
+            Xs(6) = -constrainer(-Xs(6),-200e3,10e3);
+            Xsf(6) = -constrainer(-Xsf(6),-200e3,10e3);
+        end
     end
     % ------------ Parameter estimation -----------
     TA0 = U(it-delayT,12);
@@ -164,7 +155,6 @@ for it = start:finish
     [~,fault3] = fdEM.detect(rls.e');
     if it > start+10
         if exist('fielddata')
-%             Apol = [1 -0.9886]; Bpol = [-1.078]; Cpol = [1 -0.3908 0.04806 0.3148];
             Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
             ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
         else
@@ -190,7 +180,7 @@ for it = start:finish
             switchofftime = it;
         end
     end
-    TauFault = TsParam; %param.ResponsibilityTimeConstant*10;
+    TauFault = TsParam;
     if faultOperation
         outcor = phi'*Wsave;
         Tfault = (1-Ts/TauFault)*Tfault + Ts/TauFault*(out(2) - outcor(2));
@@ -198,6 +188,30 @@ for it = start:finish
     else
         Tfault = 0.8*Tfault;
         outcor = NaN;
+    end
+    % Equilibrium constraint values influenced by a fault
+    hBP = Y(it+1,2);
+    TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
+    d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,5),'CO2');
+    dBP = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
+    U(it+1,6) = dBP;
+    % In case of a fault
+    if faultOperation
+        TBPf = TBP - Tfault;
+        hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
+        Yf(it+1,2) = hBPf;
+        Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
+        d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
+        dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
+        Uf(it+1,6) = dBPf;
+    else
+        TBPf = TBP;
+        hBPf = hBP;
+        Yf(it+1,2) = hBPf;
+        Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
+        d1f = d1;
+        dBPf = dBP;
+        Uf(it+1,6) = dBPf;
     end
     % ------------ Parameter substitutions for new iteration -----------
     if ~rem(it-1,TsParam)
@@ -217,19 +231,6 @@ for it = start:finish
         Df = ABCDQf(nx*nx+nx*nu+ny*nx+1:nx*nx+nx*nu+ny*nx+ny*nu);
         Qf = ABCDQf(nx*nx+nx*nu+ny*nx+ny*nu+1:nx*nx+nx*nu+ny*nx+ny*nu+nx*nx);
     end
-    % ------------ Constraints -----------
-    hBP = Y(it+1,2);
-    TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
-    dR = CoolProp.PropsSI('D','P',Y(it+1,3),'H',Y(it+1,4),'CO2');
-    d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,5),'CO2');
-    % In case of a fault
-    TBPf = TBP - Tfault;
-    hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
-    Yf(it+1,2) = hBPf;
-    Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
-    d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
-    dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
-    Uf(it+1,6) = dBPf;
     % ------------ New setpoint for linearization -----------
     if ~rem(it-1,TsParam)
         kf.x1 = zeros(nx,1);
@@ -254,8 +255,8 @@ for it = start:finish
     % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     statecorrectionf = kff.Kx*kff.e;
-    eigP1 = eig(kf.P1); 
-    eigP1f = eig(kff.P1); 
+    eigP1 = eig(kf.P1);
+    eigP1f = eig(kff.P1);
     record(:,it-start+1) = [Xs+kf.xf; eigP1; statecorrection; kf.e; W];
     recordf(:,it-start+1) = [Xsf+kff.xf; eigP1f; statecorrectionf; kff.e; Wf];
     resrecord(:,it-start+1) = rls.e;
