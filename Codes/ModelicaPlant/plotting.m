@@ -1,5 +1,5 @@
-load fault_chirp
-load TGC2
+load fault_faultyestctrl %fault_chirp
+load TGC_faultyestctrl.mat
 
 t = start:Ts:finish;
 figure(1)
@@ -73,7 +73,7 @@ grid on
 % ylabel('Parameters')
 
 figure(1)
-load hcw_chirp
+% load hcw_chirp
 subplot(221)
 hold on
 plot(t,recordf(1,:)/1e5,'--')

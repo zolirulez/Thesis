@@ -36,7 +36,7 @@ fdCUSUM.initialize(meanFD,variance,method,param);
 clear param
 fdEM = FaultDetector;
 method = 'EM';
-param.MeanDensityRatio = 0.2;
+param.MeanDensityRatio = 0.1;
 param.SamplingTime = Ts;
 % Here variance should rather be interpreted as a maximum bound
 if exist('fielddata')
@@ -44,23 +44,8 @@ if exist('fielddata')
     variance = diag([2e7; 2]); 
 else
     param.ResponsibilityTimeConstant = 10;
-    variance = diag([2e7; 2]); % 2e7
+    variance = diag([2e7; 1]); % 2e7 0.5
 end
 meanFD.m0 = zeros(size(rlsInitial.t,2),1);
 fdEM.initialize(meanFD,variance,method,param);
 
-% Fault operation
-faultOperation = 0;
-Tfault = 0;
-kff = copy(kf);
-rlsf = copy(rls);
-Xsf = Xs;
-Yf = Y;
-Uf = U;
-uyf = uy;
-hBPf = hBP;
-Wf = W;
-d1f = d1;
-TBPf = TBP;
-detectiontime = 0;
-switchofftime = 0;

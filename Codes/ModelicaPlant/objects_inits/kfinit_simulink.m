@@ -29,5 +29,5 @@ Xs = initial.xs;
 
 % Noises
 sigma2T = (1/3)^2;
-sigma2p = (0.5*1e5/3)^2;
+sigma2p = (0.5e5/3)^2;
 sigma2x = (0.01/3)^2;

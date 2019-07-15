@@ -29,17 +29,17 @@ YFunction = matlabFunction(ginit(y));
 % DXFunction = matlabFunction(finit(Dx));
 UFunction = u;
 XFunctionSym = x;
-load uy_sim_faulty_chirp2 % uy_sim_faulty
 
 % Time parameters, data sets
 
 delayT = 1*3;
 delayh = 25*3;
 if ~exist('fielddata')
+    load uy_sim_faultyestctrl %uy_sim_faulty_chirp2 % uy_sim_faulty
     U = uy_sim.signals.values(:,1:nu);
     Y = uy_sim.signals.values(:,nu+1:nu+ny);
     start = 2001;
-    finish = 10000;
+    finish = length(Y)-1; %10000;
 else
     start = 1001;
     finish = length(Y)-1;
@@ -78,6 +78,7 @@ W = [5000; 6000];
 
 % Fault detector and operation initialization
 faultinit_simulink
+faultopinit
 
 % Recording
 record = NaN(nx+nx+nx+ny+nw,finish-start+1);

@@ -12,12 +12,21 @@ classdef RecursiveLeastSquares < matlab.mixin.Copyable
         K   % Gain
     end
     methods
-        function regression(rls,r,y)
+        function t = regression(rls,r,y)
             rls.e = y - r'*rls.t;
             rls.s = rls.L + r'*rls.P*r;
             rls.K = rls.P*r/rls.s;
             rls.t = rls.t + rls.K*rls.e*rls.w;
             rls.P = (rls.P - rls.K*rls.s*rls.K')/rls.L;
+            t = rls.t;
+        end
+        function e = regression_simulink(rls,r,y)
+            rls.e = y - r'*rls.t;
+            rls.s = rls.L + r'*rls.P*r;
+            rls.K = rls.P*r/rls.s;
+            rls.t = rls.t + rls.K*rls.e*rls.w;
+            rls.P = (rls.P - rls.K*rls.s*rls.K')/rls.L;
+            e = rls.e';
         end
         function initialize(rls,ForgettingFactor,ResidualWeight,Initial)
             rls.t = Initial.t;

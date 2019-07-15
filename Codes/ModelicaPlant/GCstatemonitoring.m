@@ -3,7 +3,7 @@
 
 clearvars
 addpath('matfiles')
-load h1_faulty_chirp % h1_sim_faulty
+load h1_sim_faultyestctrl %h1_faulty_chirp % h1_sim_faulty
 Y = h1_sim.signals.values;
 
 P = [];
@@ -34,7 +34,7 @@ end
 start = 1000;
 t = h1_sim.time(start:end,:);
 
-load h1_sim_faulty % h1_faulty_chirp
+load h1_sim_faultyestctrl % h1_sim_faulty % h1_faulty_chirp
 Y = h1_sim.signals.values;
 figure(3)
 subplot(211)
@@ -46,7 +46,7 @@ plot(t,Y(start:end,end-9:end))
 xlabel('Time [s]')
 ylabel('Cell enthalpies [kJ/kg]')
 
-load uy_sim_faulty % uy_sim_faulty_chirp
+load uy_sim_faultyestctrl % uy_sim_faulty % uy_sim_faulty_chirp
 U = uy_sim.signals.values(:,1:12); 
 Y = uy_sim.signals.values(:,13:end); 
 CRA = U(:,1);
@@ -65,14 +65,14 @@ plot(t,Tc(start:end,:)-273)
 xlabel('Time [s]')
 ylabel('Cell temperatures [C]')
 
-X = [ones(length(start:length(Y)),1) THR(start-delay:end-delay) TA0(start:end) CRIT(start-delay:end-delay) CRA(start-delay:end-delay)]; %  
-Y = hcw(start:end);
-P = (X'*X)\X'*Y;
-max(abs(Y-X*P))
-
-figure(2)
-plot(1:10001,hcw,t,X*P)
-P
+% X = [ones(length(start:length(Y)),1) THR(start-delay:end-delay) TA0(start:end) CRIT(start-delay:end-delay) CRA(start-delay:end-delay)]; %  
+% Y = hcw(start:end);
+% P = (X'*X)\X'*Y;
+% max(abs(Y-X*P))
+% 
+% figure(2)
+% plot(1:length(Y),hcw,t,X*P)
+% P
 
 figure(6)
 [c1,lags] = xcov(THR(start-delay:end-delay),hcw(start:end));
@@ -98,4 +98,4 @@ tfest(iddata0,0)
 tfest(iddata0,1)
 tfest(iddata0,2)
 tfest(iddata0,3)
-% save('TGC2')
+save('TGC_faultyestctrl','Tcw','hcw')%save('TGC_faultyestctrl')
