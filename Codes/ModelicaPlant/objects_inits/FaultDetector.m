@@ -50,7 +50,6 @@ classdef FaultDetector < matlab.mixin.Copyable
                     g = fd.g;
                     fault = g > fd.h;
                 case 'EM'
-                    % CUSUM algorithm, for both scalar and vector case
                     if nargin > 2
                         fd.h = h;
                     end

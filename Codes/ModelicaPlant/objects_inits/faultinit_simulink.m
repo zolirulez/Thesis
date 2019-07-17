@@ -41,10 +41,10 @@ param.SamplingTime = Ts;
 % Here variance should rather be interpreted as a maximum bound
 if exist('fielddata')
     param.ResponsibilityTimeConstant = 10;
-    variance = diag([2e7; 2]); 
+    variance = diag([2e7; 1]); 
 else
     param.ResponsibilityTimeConstant = 10;
-    variance = diag([2e7; 1]); % 2e7 0.5
+    variance = diag([2e7; 2]); % 2e7 0.5
 end
 meanFD.m0 = zeros(size(rlsInitial.t,2),1);
 fdEM.initialize(meanFD,variance,method,param);

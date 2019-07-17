@@ -1,7 +1,8 @@
-load fault_faultyestctrl %fault_chirp
-load TGC_faultyestctrl.mat
+load fault_faultyestctrl3 %fault_chirp
+load TGC_faultyestctrl3.mat
 
 t = start:Ts:finish;
+tcw = start:Ts:it;
 figure(1)
 clf
 subplot(221)
@@ -85,17 +86,17 @@ plot(t,recordf(2,:)/1000,'--')
 plot(t,recordf(6,:)/1000,'--')
 plot(t,recordf(8,:)/1000,'--')
 if ~exist('fielddata')
-    plot(t,hcw(start:it)/1000,'--')
+    plot(tcw,hcw(start:it)/1000,'--')
 end
 hold off
 subplot(223)
 hold on
 plot(t,recordf(4,:)-273.15,'--')
 if ~exist('fielddata')
-    plot(t,Tcw(start:it)-273.15-3)
+    plot(tcw,Tcw(start:it)-273.15-3)
 end
 hold off
-ylim([0 50])
+ylim([10 60])
 xlabel('Time [s]')
 ylabel('Temperature [C]')
 subplot(224)
@@ -104,30 +105,34 @@ plot(t,recordf(3,:),'--')
 plot(t,recordf(7,:),'--')
 hold off
 
-if ~exist('fielddata')
-    figure(4)
-    clf
-    subplot(121)
-    hold on
-    plot(smooth(hcw(start+500:it)/1000,100),smooth(record(2,501:end)/1000,100))
-    plot(smooth(hcw(start+500:it)/1000,100),smooth(recordf(2,501:end)/1000,100))
-    plot(linspace(340,410,2),linspace(340,410,2))
-    hold off
-    xlabel('Weighted average of enthalpy states [kJ/kg]')
-    ylabel('Estimations [kJ/kg]')
-    legend('Original','Reestimated')
-    title('Lissajous figure for enthalpy')
-    subplot(122)
-    hold on
-    plot(smooth(Tcw(start+500:it)-273.15-3,100),smooth(record(4,501:end)-273.15-3,100))
-    plot(smooth(Tcw(start+500:it)-273.15-3,100),smooth(recordf(4,501:end)-273.15-3,100))
-    plot(linspace(25,50,2),linspace(25,50,2))
-    hold off
-    xlabel('Weighted average of enthalpy states converted to temperature [C]')
-    ylabel('Estimations [C]')
-    legend('Original','Reestimated')
-    title('Lissajous figure for temperature')
-    hold off
+try
+    if ~exist('fielddata')
+        figure(4)
+        clf
+        subplot(121)
+        hold on
+        plot(smooth(hcw(start+500:it)/1000,100),smooth(record(2,501:end)/1000,100))
+        plot(smooth(hcw(start+500:it)/1000,100),smooth(recordf(2,501:end)/1000,100))
+        plot(linspace(340,410,2),linspace(340,410,2))
+        hold off
+        xlabel('Weighted average of enthalpy states [kJ/kg]')
+        ylabel('Estimations [kJ/kg]')
+        legend('Original','Reestimated')
+        title('Lissajous figure for enthalpy')
+        subplot(122)
+        hold on
+        plot(smooth(Tcw(start+500:it)-273.15-3,100),smooth(record(4,501:end)-273.15-3,100))
+        plot(smooth(Tcw(start+500:it)-273.15-3,100),smooth(recordf(4,501:end)-273.15-3,100))
+        plot(linspace(25,50,2),linspace(25,50,2))
+        hold off
+        xlabel('Weighted average of enthalpy states converted to temperature [C]')
+        ylabel('Estimations [C]')
+        legend('Original','Reestimated')
+        title('Lissajous figure for temperature')
+        hold off
+    end
+catch
+    warning('No Lissajous figure')
 end
 
 % figure(3)
@@ -146,12 +151,11 @@ xlabel('Time [s]')
 ylabel('Normalized parameters')
 ylim([-20 20])
 subplot(312)
-plot(start:finish,(resrecord./max(abs(resrecord(:,5:end)'))')')
+plot(start:finish,resrecord'*diag([1 5e3]))
 grid on
-ylim([-5 1])
 xlabel('Time [s]')
-ylabel('Normalized weighted residuals')
-legend('DQ','TBP')
+ylabel('Residuals')
+legend('DQ','TBP*5e3')
 subplot(313)
 try
     plot(start:finish,diag([1 5e3])*(outcorrecord-[0; 273.15]),...
@@ -228,11 +232,11 @@ relparamstd2 = sqrt(diag(paramvar2))./paramrecord(1+length(phi):2*length(phi),de
 % --------------- Detection ----------------------
 figure(13)
 subplot(311)
-plot(start:finish,(resrecord./max(abs(resrecord(:,5:end)'))')')
-ylim([-20 20])
+plot(start:finish,resrecord'*diag([1 5e3]))
 grid on
-ylabel('Normalized residual')
+ylabel('Residual')
 xlabel('Time [s]')
+legend('DQ','TBP*5e3')
 subplot(334)
 plot(start:finish,grecord(1,:)',start:finish,fdCUSUM.h*rectwin(length(Y)-start),'r--')
 ylabel('g function')

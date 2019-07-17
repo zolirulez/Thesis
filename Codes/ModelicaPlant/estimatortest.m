@@ -26,20 +26,21 @@ substitution_simplified
 
 % Output function
 YFunction = matlabFunction(ginit(y));
-% DXFunction = matlabFunction(finit(Dx));
+DXFunction = matlabFunction(finit(Dx));
 UFunction = u;
 XFunctionSym = x;
 
 % Time parameters, data sets
 
-delayT = 1*3;
+delayT = 10*3;
 delayh = 25*3;
 if ~exist('fielddata')
-    load uy_sim_faultyestctrl %uy_sim_faulty_chirp2 % uy_sim_faulty
+    load uy_sim_faultyestctrl3 %uy_sim_faulty_chirp2 % uy_sim_faulty
     U = uy_sim.signals.values(:,1:nu);
     Y = uy_sim.signals.values(:,nu+1:nu+ny);
     start = 2001;
     finish = length(Y)-1; %10000;
+    U(U(:,5)>0.5,5) = 0.5;
 else
     start = 1001;
     finish = length(Y)-1;
@@ -92,10 +93,21 @@ faultrecord = NaN(3,finish-start+1);
 recordf = record;
 
 % For earlier states
+DQo = 74e3;
+DQ = 74e3;
+TBPo = TBP;
 meas = Y(start,:);
 measf = Yf(start,:);
 TsParam = 200;
 constrainedEstimator = 1;
+inputSample = U(start,:)';
+inputSamplef = Uf(start,:)';
+% Fault operation 2
+% resrecord2 = resrecord;
+% paramrecord2 = NaN(size(rlsInitial2.t,1)*size(rlsInitial2.t,2),finish-start+1);
+% outcorrecord2 = outcorrecord;
+% phirecord2 = NaN(length(rlsInitial2.t),finish-start+1);
+parameterRegressor = 0.9;
 
 for it = start:finish
     if ~rem(it,100)
@@ -104,6 +116,8 @@ for it = start:finish
     % ------------ State estimation -----------
     kf.markovPredictor(uy(1:nu),uy(nu+1:nu+ny),reshape(uy(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uy(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uy(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     kff.markovPredictor(uyf(1:nu),uyf(nu+1:nu+ny),reshape(uyf(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uyf(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uyf(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
+    kf.x1(4) = 0;
+    kff.x1(4) = 0;
     % Estimator lability handling
     if any(abs(eig(kff.A - kff.Kx*kff.C)) >= 1) 
         warning('Estimator is not stable')
@@ -134,17 +148,29 @@ for it = start:finish
         end
     end
     % ------------ Parameter estimation -----------
+%     DQoo = DQo;
+%     DQo = DQ;
+%     TBPoo = TBPo;
+%     TBPo = TBP;
     TA0 = U(it-delayT,12);
     THR = CoolProp.PropsSI('T','H',U(it-delayh,10),'P',Y(it-delayh,1),'CO2');
     CRG = U(it-delayh,4);
     CRIT = U(it-delayh,3);
-    CRA = U(it-delayT,1);
+    if ~exist('fielddata')
+        CRA = U(it-delayT,1);
+    else
+        CRA = 1; % It was this value all along the normal operation range..
+    end
     DmV = U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
     DQ = DmV*(U(it-delayh,10) - Y(it,2));
     CRV = U(it,2);
-    phi = [1; CRA; CRV; TA0-273; CRIT; CRG; THR-273];
+    DmQ = U(it-delayh,5);
+    pGC = Y(it,1);
+    phi = [1; CRA; CRV; TA0-273; THR-273; DmQ; pGC];
+%     phi2 = [1; CRA; CRV; TA0-273; CRIT; CRG; THR-273; CRA^2; CRV^2; (TA0-273)^2; CRIT^2; CRG^2; (THR-273)^2];
     out = [DQ TBP]; 
     rls.regression(phi,out);
+%     rls2.regression(phi2,out);
     % Parameter identification gets stuck in local minimum, but this would
     % be the way:
     %     DTf = TBPf - TA0;
@@ -168,27 +194,32 @@ for it = start:finish
     [~,fault2] = fdGLR.detect(ew(end,1));
     % ------------ Fault Operation -----------
     if it > start + 20
-        if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
-            Wsave = reshape(paramrecord(:,it-500-start),length(phi),length(out));
+        if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation && it>start+5000
+            disp('Fault detected!')
+%             Wsave2 = reshape(paramrecord2(:,it-500-start),length(phi2),length(out));
             if ~detectiontime
                 detectiontime = it;
             end
+            Wsave = reshape(paramrecord(:,detectiontime-500-start),length(phi),length(out));
             kff.P1 = zeros(nx);
             faultOperation = 1;
         end
         if ~any(faultrecord(3,it-19-start:it-start))
-            faultOperation = 0;
+%             faultOperation = 0;
             switchofftime = it;
         end
     end
     TauFault = TsParam;
-    if faultOperation
+    if detectiontime > 0 % faultOperation
         outcor = phi'*Wsave;
+%         outcor2 = phi2'*Wsave2;
         Tfault = (1-Ts/TauFault)*Tfault + Ts/TauFault*(out(2) - outcor(2));
         rls.t = Wsave;
+%         rls2.t = Wsave2;
     else
-        Tfault = 0.8*Tfault;
+%         Tfault = 0.8*Tfault;
         outcor = NaN;
+%         outcor2 = NaN;
     end
     % Equilibrium constraint values influenced by a fault
     hBP = Y(it+1,2);
@@ -197,9 +228,13 @@ for it = start:finish
     dBP = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
     U(it+1,6) = dBP;
     % In case of a fault
-    if faultOperation
+    if detectiontime > 0
         TBPf = TBP - Tfault;
-        hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
+        try
+            hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
+        catch % Handling of a weird error
+            hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1)+1e3,'T',TBPf,'CO2');
+        end
         Yf(it+1,2) = hBPf;
         Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
         d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
@@ -218,7 +253,7 @@ for it = start:finish
     if ~rem(it-1,TsParam)
         paramSampleTime = it;
         UXYW = [U(it,:)'; Xs; Y(it,1:ny)'; W];
-        UXYWf = [U(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
+        UXYWf = [Uf(it,:)'; Xsf; Yf(it,1:ny)'; Wf];
         ABCDQ = LTVsystemDescription(UXYW(1:nu), UXYW(nu+1:nu+nx), UXYW(nu+nx+1:nu+nx+ny), UXYW(nu+nx+ny+1:nu+nx+ny+nw));
         ABCDQf = LTVsystemDescription(UXYWf(1:nu), UXYWf(nu+1:nu+nx), UXYWf(nu+nx+1:nu+nx+ny), UXYWf(nu+nx+ny+1:nu+nx+ny+nw));
         A = ABCDQ(1:nx*nx);
@@ -236,7 +271,6 @@ for it = start:finish
     if ~rem(it-1,TsParam)
         kf.x1 = zeros(nx,1);
         kff.x1 = zeros(nx,1);
-        kf.P1 = kf.P1*2;
         kff.P1 = kff.P1*2;
         inputSample = U(it,:)';
         inputSamplef = Uf(it,:)';
@@ -265,6 +299,10 @@ for it = start:finish
     outrecord(:,it-start+1) = out';
     outcorrecord(:,it-start+1) = outcor';
     phirecord(:,it-start+1) = phi;
+%     resrecord2(:,it-start+1) = rls2.e;
+%     paramrecord2(:,it-start+1) = reshape(rls2.t,size(rls2.t,1)*size(rls2.t,2),1);
+%     outcorrecord2(:,it-start+1) = outcor2';
+%     phirecord2(:,it-start+1) = phi2;
     grecord(:,it-start+1) = [fdCUSUM.g; fdGLR.g; fdEM.g];
     faultrecord(:,it-start+1) = [fault1; fault2; fault3];
 end

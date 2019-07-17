@@ -30,7 +30,6 @@ pRValue = XValue(5);
 hRValue = XValue(6);
 dRValue = XValue(7);
 delta_hValue = XValue(8);
-delta_TValue = XValue(9);
 % Tables
 p1idx = max(1,[find(p1Value < Pbig)-1 51]);
 pRidx = max(1,[find(pRValue < Pbig)-1 51]);
@@ -44,7 +43,7 @@ delta_Th1Value = paramvectorT(1,p1idx(1),h1idx(1));
 delta_Td1Value = paramvectorT(2,p1idx(1),h1idx(1));
 
 
-value = [strrep('CRA,CRG,CRIT,CRV,DmQ,TA0,TA1,d1,dBP,dG,dR,delta_T,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_pdR,delta_phR,h1,hG,hHR,hL,hR,p1,pMT,pR',',','Value,') 'Value'];
+value = [strrep('CRA,CRG,CRIT,CRV,DmQ,TA0,TA1,d1,dBP,dG,dR,delta_h,delta_Td1,delta_Th1,delta_pd1,delta_ph1,delta_pdR,delta_phR,h1,hG,hHR,hL,hR,p1,pMT,pR',',','Value,') 'Value'];
 DX = eval(['DXFunction(' value ');']);
 % for it = 1:length(UFunction)
 %     DXFunction = subs(DXFunction,{UFunction(it)},UValue(it));
