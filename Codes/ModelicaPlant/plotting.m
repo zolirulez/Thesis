@@ -40,28 +40,29 @@ ylabel('Density [kg/m^3]')
 
 figure(2)
 subplot(311)
-plot(t,record(nx+1:nx+nx,:))
+plot(t,record(nx+1,:))
 xlabel('Time [s]')
-ylabel('Eigenvalues of P_1')
+ylabel('Trace of P_1')
+ylim([0 1e9])
 subplot(312)
-plot(t,record(nx+nx+1:nx+nx+nx,:))
+plot(t,record(nx+2:nx+nx+1,:))
 xlabel('Time [s]')
 ylabel('State correction of K_xe')
 legend('p1','h1','d1','h1','pR','hR','dR','delta_h');
 subplot(3,3,7)
-plot(t,record(nx+nx+nx+1,:)/1e5,t,record(nx+nx+nx+3,:)/1e5)
+plot(t,record(nx+nx+2,:)/1e5,t,record(nx+nx+4,:)/1e5)
 legend('p_1','p_R')
 xlabel('Time [s]')
 ylabel('Innovation [bar]')
 grid on
 subplot(3,3,8)
-plot(t,record(nx+nx+nx+2,:)/1e3,t,record(nx+nx+nx+5,:)/1e3)
+plot(t,record(nx+nx+3,:)/1e3,t,record(nx+nx+6,:)/1e3)
 legend('h_B_P','h_1')
 xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
 grid on
 subplot(3,3,9)
-plot(t,record(nx+nx+nx+4,:)/1e3)
+plot(t,record(nx+nx+5,:)/1e3)
 legend('h_R')
 xlabel('Time [s]')
 ylabel('Innovation [kJ/kg]')
@@ -185,6 +186,7 @@ xlabel('Time [s]')
 ylabel('Fault estimation [K]')
 legend('Estimated fault','True fault')
 %% Residual
+%{
 global var_resid FalseAlarmTime
 if ~exist('fielddata')
     resid = resrecord(end,:);
@@ -210,6 +212,7 @@ subplot(224)
 var_resid1 = var(resid_normal);
 histfit(resid_normal,50)
 title(['Histogram of data with variance ' num2str(var_resid1)])
+
 % ------- Relative parameter standard deviations -------
 outs = outrecord(:,2:round(length(Y)/5));
 phis = phirecord(:,2:round(length(Y)/5));
@@ -229,6 +232,7 @@ diag(paramvar2)
 var(paramrecord(:,length(outs)-200:length(outs)-100)')'
 relparamstd1 = sqrt(diag(paramvar1))./paramrecord(1:length(phi),detectiontime-300-start)
 relparamstd2 = sqrt(diag(paramvar2))./paramrecord(1+length(phi):2*length(phi),detectiontime-300-start)
+%}
 % --------------- Detection ----------------------
 figure(13)
 subplot(311)

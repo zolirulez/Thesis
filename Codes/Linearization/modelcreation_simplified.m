@@ -62,7 +62,6 @@ DhR = 1/(dR*VR)*(DmV*hBP - DmL*hL - DmG*hG - DmIT*hG);
 % Fan (A refers to air)
 % Disturbances
 Ddelta_h = -1/Tauh*delta_h*0;
-Ddelta_T = -1/Tauh*delta_T;
 % ------------------------- MEASUREMENTS ----------------------------------
 p1m = p1;
 hBPm = hBP;
@@ -90,9 +89,9 @@ if exist('fielddata')
 %     noise.R = noise.R*1e1;
     noise.R(4,4) = noise.R(4,4)*1e1;
 end
-Qcont = diag([pBound*1e1; hBound*1e2; dBound; TBound*1e-5;...
-    pBound*1e1; hBound; dBound;...
-    hBound*1e3]); % TODO
+Qcont = diag([pBound; hBound*1e1; dBound*1e-1; TBound*1e-5;...
+    pBound; hBound*1e1; dBound*1e-1;...
+    hBound*1e2]); % TODO
 noise.S = zeros(nx,ny);
 % ------------------------ LINEARIZATION ----------------------------------                              
 % Jacobians

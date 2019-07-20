@@ -1,6 +1,7 @@
 % Fault operation
 faultOperation = 0;
 Tfault = 0;
+hFault = 0;
 kff = copy(kf);
 rlsf = copy(rls);
 Xsf = Xs;
