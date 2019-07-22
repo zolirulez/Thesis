@@ -16,6 +16,7 @@ classdef FaultDetector < matlab.mixin.Copyable
         % Generalized Likelihood Ratio
         rv  % Residual vector 
         G   % Gain of sum of squares
+        G1
         mds % Sum of mean differences
         Pfalse      % Probability of false alarm
         Pmissed     % Probability of missed detection
@@ -53,13 +54,45 @@ classdef FaultDetector < matlab.mixin.Copyable
                     if nargin > 2
                         fd.h = h;
                     end
-                    gain0 = max(1-fd.g,1e-5)/sqrt(2*pi*det(fd.v));
-                    gain1 = max(fd.g,1e-5)/sqrt(2*pi*det(fd.vf));
-                    r0 = gain0*max(exp(-0.5*(z-fd.m0)'/fd.v*(z-fd.m0)),1e-20);
-                    r1 = gain1*max(exp(-0.5*(z-fd.m1)'/fd.vf*(z-fd.m1)),1e-20);
-                    fd.g = (1-fd.Ts/fd.tau)*fd.g + fd.Ts/fd.tau*r1/(r0 + r1); % pi1
+                    fd.rv = [fd.rv(:,2:end) z];
+                    g = min(max(fd.g,0.01),0.99);
+                    gain0 = (1-g)*fd.G;
+                    gain1 = fd.g*fd.G1;
+                    % Since the matrix is diagonal:
+                    r0 = max(gain0*exp(-0.5*sum((fd.rv-fd.m0)'.^2/fd.v,2)),1e-20);
+                    r1 = max(gain1*exp(-0.5*sum((fd.rv-fd.m1)'.^2/fd.vf,2)),1e-20);
+                    rn1 = r1./(r0+r1);
+                    Nk1 = sum(rn1);
+                    
+                    fd.m1 = 1/Nk1*fd.rv*rn1;
+                    fd.g = Nk1/fd.M;%r1/(r0 + r1);
                     g = fd.g;
                     fault = g > fd.h;
+                    %fd.g = (1-fd.Ts/fd.tau)*fd.g + fd.Ts/fd.tau*r1/(r0 + r1); % pi1
+%   for k = 1:K
+%       r(:,k) = pi_k(k)*mvnpdf(data, mu{k}, Sigma{k});
+%   end
+%   rn = r./sum(r,2);
+%   %% Update parameters
+%   Nk = sum(rn,1);
+%   % XXX: FILL ME IN!
+%   mu_new = cell(K,1);
+%   Sigma_new = cell(K,1);
+%   mu_new(:) = {zeros(1,2)};
+%   Sigma_new(:) = {zeros(2,2)};
+%   for k = 1:K
+%       for n = 1:N
+%           mu_new{k} = mu_new{k} + 1/Nk(k)*rn(n,k)*data(n,:);
+%       end
+%       for n = 1:N
+%           Sigma_new{k} = Sigma_new{k} + 1/Nk(k)*rn(n,k)*((data(n,:)-mu_new{k})'*(data(n,:)-mu_new{k}));
+%       end
+%   end
+%   pi_k_new = Nk'/N;
+%   mu = mu_new;
+%   Sigma = Sigma_new;
+%   pi_k = pi_k_new;
+                    
             end
         end
         function initialize(fd,Mean,Variance,Method,FurtherParameters)
@@ -88,6 +121,10 @@ classdef FaultDetector < matlab.mixin.Copyable
                     fd.Ts = FurtherParameters.SamplingTime;
                     fd.m1 = fd.m0;
                     fd.h = 0.5;
+                    fd.M = FurtherParameters.WindowLength;
+                    fd.G = 1/(2*pi*det(fd.v));
+                    fd.G1 = 1/(2*pi*det(fd.vf));
+                    fd.rv = fd.m0.*ones(length(fd.v),fd.M);
                 otherwise
                     warning('Method required is unknown')
             end

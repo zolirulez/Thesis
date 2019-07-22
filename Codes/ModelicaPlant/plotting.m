@@ -1,5 +1,5 @@
-load fault_faultyestctrl3 %fault_chirp
-load TGC_faultyestctrl3.mat
+load fault_faultyestctrl_5 %fault_chirp
+load TGC_faultyestctrl_5.mat
 
 t = start:Ts:finish;
 tcw = start:Ts:it;
@@ -152,19 +152,19 @@ xlabel('Time [s]')
 ylabel('Normalized parameters')
 ylim([-20 20])
 subplot(312)
-plot(start:finish,resrecord'*diag([1 5e3]))
+plot(start:finish,resrecord')
 grid on
 xlabel('Time [s]')
 ylabel('Residuals')
-legend('DQ','TBP*5e3')
+legend('DQ','hBP')
 subplot(313)
 try
-    plot(start:finish,diag([1 5e3])*(outcorrecord-[0; 273.15]),...
-        start:finish,(outrecord-[0; 273.15])'*diag([1 5e3]),...
+    plot(start:finish,(outcorrecord-[0; 273.15]),...
+        start:finish,(outrecord-[0; 273.15])',...
         [detectiontime detectiontime],[0 1.5e5],'--',...
         [detectiontime-500 detectiontime-500],[0 1.5e5],'--');
-    legend('Reestimated DQ','Reestimated TBP*5e3',...
-        'Faulty DQ','Faulty TBP*5e3','Estimated detection time','Parameter sampling')
+    legend('Reestimated DQ','Reestimated hBP',...
+        'Faulty DQ','Faulty hBP','Estimated detection time','Parameter sampling')
     xlabel('Time [s]')
     ylabel('Outputs')
 catch
@@ -236,11 +236,11 @@ relparamstd2 = sqrt(diag(paramvar2))./paramrecord(1+length(phi):2*length(phi),de
 % --------------- Detection ----------------------
 figure(13)
 subplot(311)
-plot(start:finish,resrecord'*diag([1 5e3]))
+plot(start:finish,resrecord')
 grid on
 ylabel('Residual')
 xlabel('Time [s]')
-legend('DQ','TBP*5e3')
+legend('DQ','hBP')
 subplot(334)
 plot(start:finish,grecord(1,:)',start:finish,fdCUSUM.h*rectwin(length(Y)-start),'r--')
 ylabel('g function')
@@ -273,10 +273,9 @@ plot(start:finish,grecord(3,:)'>fdEM.h,'LineWidth',2)
 ylabel('Fault detection')
 xlabel('Time [s]')
 
-if exist('fielddata')
-    figure(15)
-    plot(start+1:it,ew);
-    ylabel('Whitened residual')
-    xlabel('Time [s]')
-end
+figure(15)
+plot(start+1:it,ew);
+ylabel('Whitened residual')
+xlabel('Time [s]')
+
 

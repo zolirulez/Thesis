@@ -1,24 +1,27 @@
 clearvars
 fielddata = 1;
 if fielddata
-    load resid_normal_fielddata
+%     load resid_normal_fielddata
+    load resid_normal_fielddata2
 else
-    load resid_normal_chirp
+%     load resid_normal_chirp
+    load resid_normal_faultyestctrl
 end
 % Input: [1; CRA; CRV; TA0; CRIT; THRd]
 delay = 75;
-Y = resid_normal;
-U = TA0(2:length(resid_normal)+1,1); %Ur(2:length(resid_normal)+1);
+Y = resrecord'; %Y = resid_normal;
+U = TA0; %U = TA0(2:length(resid_normal)+1,1); %Ur(2:length(resid_normal)+1);
 
 % NOTE: for fielddata the investigated length is 1:7000, for 
 % chirp it is 1:2000
+% for faultyestctrl it is 1:10000
 
 if fielddata
     y=Y(1:3500,1);
     u=U(1:3500,1);
 else
-    y=Y(1:1000,1);
-    u=U(1:1000,1);
+    y=Y(1:5000,1);
+    u=U(1:5000,1);
 end
 z=[y u];
 Ze=dtrend(z);
@@ -26,8 +29,8 @@ if fielddata
     y=Y(3501:7000,1);
     u=U(3501:7000,1);
 else
-    y=Y(1001:2000,1);
-    u=U(1001:2000,1);
+    y=Y(5001:10000,1);
+    u=U(5001:10000,1);
 end
 z=[y u];
 Zt=dtrend(z);

@@ -35,7 +35,7 @@ XFunctionSym = x;
 delayT = 10*3;
 delayh = 25*3;
 if ~exist('fielddata')
-    load uy_sim_faultyestctrl3 %uy_sim_faulty_chirp2 % uy_sim_faulty
+    load uy_sim_faultyestctrl_5 %uy_sim_faulty_chirp2 % uy_sim_faulty
     U = uy_sim.signals.values(:,1:nu);
     Y = uy_sim.signals.values(:,nu+1:nu+ny);
     start = 2001;
@@ -181,22 +181,25 @@ for it = start:finish
     if it == start
         rls.e = zeros(1,length(rls.e));
     end
-    [~,fault3] = fdEM.detect(rls.e');
     if it > start+10
         if exist('fielddata')
-            Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
+%             Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
+            Apol = [1 -0.9937 -0.002361]; Bpol = [-96.09 99.94]; Cpol = [1 -0.3972];
             ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
         else
+            Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];
             ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
+            ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
         end
     else
         ew = 0;
     end
+    [~,fault3] = fdEM.detect(rls.e');
     [~,fault1] = fdCUSUM.detect(ew(end,1));
     [~,fault2] = fdGLR.detect(ew(end,1));
     % ------------ Fault Operation -----------
-    if it > start + 18000 % 5000 TODO 
-        if it==20002% all(faultrecord(3,it-19-start:it-start)) && ~faultOperation TODO
+    if it > start + 5000%18000 % 5000 TODO 
+        if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
             disp('Fault detected!')
             if ~detectiontime
                 detectiontime = it;
@@ -227,12 +230,8 @@ for it = start:finish
     U(it+1,6) = dBP;
     % In case of a fault
     if detectiontime > 0
-        hBPf = hHR-outcor(1)/DmV;% hBP - hFault
-%         try
-%             hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1),'T',TBPf,'CO2');
-%         catch % Handling of a weird error
-%             hBPf = CoolProp.PropsSI('H','P',Yf(it+1,1)+1e3,'T',TBPf,'CO2');
-%         end
+        DQcor = outcor(1);
+        hBPf = hHR-DQcor/DmV;
         Yf(it+1,2) = hBPf;
         Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
         d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
