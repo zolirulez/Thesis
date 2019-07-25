@@ -1,5 +1,5 @@
 % RLS
-rlsInitial.t = ones(5,1)*[1 1e-3];  % 10
+rlsInitial.t = ones(6,1)*[1 1e-3];  % 10
 rlsInitial.P = diag(max(rlsInitial.t')')/10; 
 rls = RecursiveLeastSquares;
 lambda = 1 - 1e-4;

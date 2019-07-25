@@ -32,10 +32,10 @@ XFunctionSym = x;
 
 % Time parameters, data sets
 
-delayT = 10*3;
-delayh = 25*3;
+delayT = 300%10*3;
+delayh = 50%25*3;
 if ~exist('fielddata')
-    load uy_sim_faultyestctrl_5 %uy_sim_faulty_chirp2 % uy_sim_faulty
+    load uy_sim_faultcontrol3 %uy_sim_faulty_chirp2 % uy_sim_faulty
     U = uy_sim.signals.values(:,1:nu);
     Y = uy_sim.signals.values(:,nu+1:nu+ny);
     start = 2001;
@@ -98,7 +98,7 @@ DQ = 74e3;
 TBPo = TBP;
 meas = Y(start,:);
 measf = Yf(start,:);
-TsParam = 100;
+TsParam = 1000;
 constrainedEstimator = 1;
 inputSample = U(start,:)';
 inputSamplef = Uf(start,:)';
@@ -156,6 +156,14 @@ for it = start:finish
     else
         CRA = 1; % It was this value all along the normal operation range..
     end
+    if it > 10000 && ~faultOperation
+        phiold = phirecord(:,it-start+1-2500-max(min(round(1000*randn),2000),-2000));
+        outold = outrecord(:,it-start+1-2500-max(min(round(1000*randn),2000),-2000))';
+        rls.regression(phiold,outold);
+        phiold = phirecord(:,it-start+1-5000-max(min(round(1000*randn),2000),-2000));
+        outold = outrecord(:,it-start+1-5000-max(min(round(1000*randn),2000),-2000))';
+        rls.regression(phiold,outold);
+    end
     DmV = U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
     DQ = DmV*(U(it-delayh,10) - Y(it,2));
     CRV = U(it,2);
@@ -164,14 +172,14 @@ for it = start:finish
     hHR = U(it-delayh,10);
     pGC = Y(it,1);
     pR = Y(it,3);
-    phi = [1; (THR-TA0)*CRA; CRIT*hHR; DmQ*hHR; CRV*sqrt(pGC-pR)];
+    phi = [1; TA0; (THR-TA0)*CRA; CRIT*hHR; DmQ*hHR; CRV*sqrt(pGC-pR)];
     out = [DQ hBP]; 
     rls.regression(phi,out);
     % Regularization
-    if ~rem(it,100)
-        rls.t = rls.t + parameterRegressor*randn(size(rls.t,1),size(rls.t,2)).*rls.t;
-        parameterRegressor = parameterRegressor*0.9;
-    end
+%     if ~rem(it,100) && it < 15000
+%         rls.t = rls.t + parameterRegressor*randn(size(rls.t,1),size(rls.t,2)).*rls.t;
+%         parameterRegressor = parameterRegressor*0.9;
+%     end
 %     rls2.regression(phi2,out);
     % Parameter identification gets stuck in local minimum, but this would
     % be the way:
@@ -188,7 +196,7 @@ for it = start:finish
             ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
         else
             Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];
-            ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
+            %ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
             ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
         end
     else
@@ -199,11 +207,11 @@ for it = start:finish
     [~,fault2] = fdGLR.detect(ew(end,1));
     % ------------ Fault Operation -----------
     if it > start + 5000%18000 % 5000 TODO 
-        if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation
+        if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation % TODO
             disp('Fault detected!')
             if ~detectiontime
                 detectiontime = it;
-            end
+            end 
             Wsave = reshape(paramrecord(:,detectiontime-500-start),length(phi),length(out));
             faultOperation = 1;
         end
@@ -224,18 +232,32 @@ for it = start:finish
     end
     % Equilibrium constraint values influenced by a fault
     hBP = Y(it+1,2);
-    TBP = CoolProp .PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
-    d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,5),'CO2');
-    dBP = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
+    try
+        TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
+        dBP = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,2),'CO2');
+        d1 = CoolProp.PropsSI('D','P',Y(it+1,1),'H',Y(it+1,5),'CO2');
+    catch
+        TBP = CoolProp.PropsSI('T','P',Y(it+1,1)+1e4,'H',hBP,'CO2');
+        dBP = CoolProp.PropsSI('D','P',Y(it+1,1)+1e4,'H',Y(it+1,2),'CO2');
+        d1 = CoolProp.PropsSI('D','P',Y(it+1,1)+1e4,'H',Y(it+1,5),'CO2');
+    end
     U(it+1,6) = dBP;
     % In case of a fault
     if detectiontime > 0
         DQcor = outcor(1);
-        hBPf = hHR-DQcor/DmV;
+        dBPf = dBP;
+        for convit = 1:3
+            DmVf = U(it+1,2)*KvValues(1)*sqrt(dBPf*(Y(it+1,1) - Y(it+1,3)));
+            hBPf = hHR-DQcor/DmVf;
+            try
+                dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',hBPf,'CO2');
+            catch
+                dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1)+1e4,'H',hBPf,'CO2');
+            end
+        end
         Yf(it+1,2) = hBPf;
         Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
         d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
-        dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,2),'CO2');
         Uf(it+1,6) = dBPf;
     else
         TBPf = TBP;
@@ -288,10 +310,10 @@ for it = start:finish
     % ------------ Recording -----------
     statecorrection = kf.Kx*kf.e;
     statecorrectionf = kff.Kx*kff.e;
-    eigP1 = trace(kf.P1);
-    eigP1f = trace(kff.P1);
-    record(:,it-start+1) = [Xs+kf.xf; eigP1; statecorrection; kf.e; W];
-    recordf(:,it-start+1) = [Xsf+kff.xf; eigP1f; statecorrectionf; kff.e; Wf];
+    traceP1 = trace(kf.P1);
+    traceP1f = trace(kff.P1);
+    record(:,it-start+1) = [Xs+kf.xf; traceP1; statecorrection; kf.e; W];
+    recordf(:,it-start+1) = [Xsf+kff.xf; traceP1f; statecorrectionf; kff.e; Wf];
     resrecord(:,it-start+1) = rls.e;
     paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
     outrecord(:,it-start+1) = out';

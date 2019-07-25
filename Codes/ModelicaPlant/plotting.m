@@ -1,5 +1,5 @@
-load fault_faultyestctrl_5 %fault_chirp
-load TGC_faultyestctrl_5.mat
+load fault_sim_faultcontrol2 %fault_chirp
+load TGC_faultcontrol2.mat
 
 t = start:Ts:finish;
 tcw = start:Ts:it;

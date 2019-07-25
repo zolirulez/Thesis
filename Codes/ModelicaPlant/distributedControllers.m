@@ -19,7 +19,7 @@ PI_HP.initialize(K,Ti/Ts,initialIntegration,minOutput,maxOutput,negation,Ts)
 %         rotation=90,
 %         origin={-112,156})));
 PI_GC = PIController;
-Ti = 200;
+Ti = 500;
 K = 1e-2;
 initialIntegration = 0.625;
 PI_GC.initialize(K,Ti/Ts,initialIntegration,minOutput,maxOutput,negation,Ts)
@@ -28,7 +28,7 @@ PI_GC.initialize(K,Ti/Ts,initialIntegration,minOutput,maxOutput,negation,Ts)
 %     yInitial=0.625,
 %     k=1e-2)
 PI_MT = PIController;
-Ti = 100;
+Ti = 200;
 K = 1e-6;
 initialIntegration = 0.2;
 PI_MT.initialize(K,Ti/Ts,initialIntegration,minOutput,maxOutput,negation,Ts)
@@ -46,7 +46,7 @@ PI_LT.initialize(K,Ti/Ts,initialIntegration,minOutput,maxOutput,negation,Ts)
 %     k=1e-7,
 %     yInitial=0.3)
 PI_RP = PIController;
-Ti = 20;
+Ti = 50;
 K = 1e-5;
 initialIntegration = 0.3;
 PI_RP.initialize(K,Ti/Ts,initialIntegration,minOutput,maxOutput,negation,Ts)

@@ -46,7 +46,7 @@ if exist('fielddata')
 else
     param.MeanDensityRatio = 0.1;
     param.ResponsibilityTimeConstant = 10;
-    variance = diag([1e7; 2.5e7])*2^2; % 2e7 0.5
+    variance = diag([1e7; 1e7])*2^2; % 2e7 0.5
 end
 meanFD.m0 = zeros(size(rlsInitial.t,2),1);
 fdEM.initialize(meanFD,variance,method,param);

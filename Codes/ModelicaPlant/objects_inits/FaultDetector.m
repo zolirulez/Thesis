@@ -68,32 +68,12 @@ classdef FaultDetector < matlab.mixin.Copyable
                     fd.g = Nk1/fd.M;%r1/(r0 + r1);
                     g = fd.g;
                     fault = g > fd.h;
-                    %fd.g = (1-fd.Ts/fd.tau)*fd.g + fd.Ts/fd.tau*r1/(r0 + r1); % pi1
-%   for k = 1:K
-%       r(:,k) = pi_k(k)*mvnpdf(data, mu{k}, Sigma{k});
-%   end
-%   rn = r./sum(r,2);
-%   %% Update parameters
-%   Nk = sum(rn,1);
-%   % XXX: FILL ME IN!
-%   mu_new = cell(K,1);
-%   Sigma_new = cell(K,1);
-%   mu_new(:) = {zeros(1,2)};
-%   Sigma_new(:) = {zeros(2,2)};
-%   for k = 1:K
-%       for n = 1:N
-%           mu_new{k} = mu_new{k} + 1/Nk(k)*rn(n,k)*data(n,:);
-%       end
-%       for n = 1:N
-%           Sigma_new{k} = Sigma_new{k} + 1/Nk(k)*rn(n,k)*((data(n,:)-mu_new{k})'*(data(n,:)-mu_new{k}));
-%       end
-%   end
-%   pi_k_new = Nk'/N;
-%   mu = mu_new;
-%   Sigma = Sigma_new;
-%   pi_k = pi_k_new;
-                    
+                    %fd.g = (1-fd.Ts/fd.tau)*fd.g + fd.Ts/fd.tau*r1/(r0 + r1); % pi1   
             end
+        end
+        function g_fault = detect_simulink(fd,z)
+            [g,fault] = fd.detect(z);
+            g_fault = [g; fault];
         end
         function initialize(fd,Mean,Variance,Method,FurtherParameters)
             fd.Method = Method;
