@@ -23,11 +23,20 @@ classdef RecursiveLeastSquares < matlab.mixin.Copyable
         end
         function e_t = regression_simulink(rls,r,y,batch)
             rls.e = y - r'*rls.t;
-            rls.s = rls.L + r'*rls.P*r;
+            if ~batch
+                rls.s = rls.L + r'*rls.P*r;
+            else
+                rls.s = 1 + r'*rls.P*r;
+            end
             rls.K = rls.P*r/rls.s;
             rls.t = rls.t + rls.K*rls.e*rls.w;
             if ~batch
-                rls.P = (rls.P - rls.K*rls.s*rls.K')/rls.L;
+                P = (rls.P - rls.K*rls.s*rls.K')/rls.L;
+            else
+                P = (rls.P - rls.K*rls.s*rls.K');
+            end
+            if ~any(diag(P)<0)
+                rls.P = P;
             end
             e_t = [rls.e'; reshape(rls.t,size(rls.t,1)*size(rls.t,2),1)];
 %             rls.t = rls.t + rls.std*randn(size(rls.t,1),size(rls.t,2)).*rls.t;

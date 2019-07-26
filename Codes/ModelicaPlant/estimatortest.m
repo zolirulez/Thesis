@@ -35,7 +35,7 @@ XFunctionSym = x;
 delayT = 300%10*3;
 delayh = 50%25*3;
 if ~exist('fielddata')
-    load uy_sim_faultcontrol3 %uy_sim_faulty_chirp2 % uy_sim_faulty
+    load uy_sim_faultcontrol7 %uy_sim_faulty_chirp2 % uy_sim_faulty
     U = uy_sim.signals.values(:,1:nu);
     Y = uy_sim.signals.values(:,nu+1:nu+ny);
     start = 2001;
@@ -156,26 +156,29 @@ for it = start:finish
     else
         CRA = 1; % It was this value all along the normal operation range..
     end
-    if it > 10000 && ~faultOperation
-        phiold = phirecord(:,it-start+1-2500-max(min(round(1000*randn),2000),-2000));
-        outold = outrecord(:,it-start+1-2500-max(min(round(1000*randn),2000),-2000))';
+    if it > 3000 && ~faultOperation
+        phiold = phirecord(:,it-start+1-250);
+        outold = outrecord(:,it-start+1-250)';
         rls.regression(phiold,outold);
-        phiold = phirecord(:,it-start+1-5000-max(min(round(1000*randn),2000),-2000));
-        outold = outrecord(:,it-start+1-5000-max(min(round(1000*randn),2000),-2000))';
+        phiold = phirecord(:,it-start+1-500);
+        outold = outrecord(:,it-start+1-500)';
         rls.regression(phiold,outold);
     end
-    DmV = U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
-    DQ = DmV*(U(it-delayh,10) - Y(it,2));
     CRV = U(it,2);
     CRIT = U(it,3);
     DmQ = U(it-delayh,5);
     hHR = U(it-delayh,10);
     pGC = Y(it,1);
     pR = Y(it,3);
-    phi = [1; TA0; (THR-TA0)*CRA; CRIT*hHR; DmQ*hHR; CRV*sqrt(pGC-pR)];
+    dG = U(it-delayh,7);
+    DmIT = dG*VValues(3)*CRIT*fValues(1);
+    DmV = DmQ + DmIT;%U(it,2)*KvValues(1)*sqrt(U(it,6)*(Y(it,1) - Y(it,3)));
+    DQ = DmV*(U(it-delayh,10) - Y(it,2));
+    phi = [1; hHR; (THR-TA0); CRA; DmIT*hHR; DmQ*hHR; CRV*sqrt(pGC-pR)];
+    %phi = [1; hHR; TA0; (THR-TA0); CRA; CRIT*hHR; DmQ*hHR; CRV*sqrt(pGC-pR)];
     out = [DQ hBP]; 
     rls.regression(phi,out);
-    % Regularization
+    % Regularization CRIT*hHR;
 %     if ~rem(it,100) && it < 15000
 %         rls.t = rls.t + parameterRegressor*randn(size(rls.t,1),size(rls.t,2)).*rls.t;
 %         parameterRegressor = parameterRegressor*0.9;
@@ -206,8 +209,8 @@ for it = start:finish
     [~,fault1] = fdCUSUM.detect(ew(end,1));
     [~,fault2] = fdGLR.detect(ew(end,1));
     % ------------ Fault Operation -----------
-    if it > start + 5000%18000 % 5000 TODO 
-        if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation % TODO
+    if it > start + round(finish/4)%18000 % 5000 TODO 
+        if it == 5002 %all(faultrecord(3,it-19-start:it-start)) && ~faultOperation % TODO
             disp('Fault detected!')
             if ~detectiontime
                 detectiontime = it;
@@ -245,16 +248,16 @@ for it = start:finish
     % In case of a fault
     if detectiontime > 0
         DQcor = outcor(1);
-        dBPf = dBP;
-        for convit = 1:3
-            DmVf = U(it+1,2)*KvValues(1)*sqrt(dBPf*(Y(it+1,1) - Y(it+1,3)));
-            hBPf = hHR-DQcor/DmVf;
+%         dBPf = dBP;
+%         for convit = 1:3
+%             DmVf = U(it+1,2)*KvValues(1)*sqrt(dBPf*(Y(it+1,1) - Y(it+1,3)));
+            hBPf = hHR-DQcor/DmV;
             try
                 dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',hBPf,'CO2');
             catch
                 dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1)+1e4,'H',hBPf,'CO2');
             end
-        end
+%         end
         Yf(it+1,2) = hBPf;
         Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
         d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');

@@ -20,7 +20,7 @@ KvValues = [0.8 2]*3e-5;% 8.7841e-06;% KvV
 TauValues = [1 0.1 100]; % TauA Taup Tauh
 eValues = 0.65; % eS
 sigmaValues = [5000 6000 1000]; % s0 k cp 
-VValues = [19.2 133 0.05*2 0.12*2]*10^-3; % Vc VR VG
+VValues = [19.2 133 0.05*2 0.12*2]*10^-3; % Vc VR VG VMT
 % NOTE: multiplication of 2 of the displacement values are given, since in
 % the maximal volume flow value is assumed to be the double of the nominal
 % volume flow.
