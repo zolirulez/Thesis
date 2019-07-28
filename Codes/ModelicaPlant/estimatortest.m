@@ -35,7 +35,7 @@ XFunctionSym = x;
 delayT = 300%10*3;
 delayh = 50%25*3;
 if ~exist('fielddata')
-    load uy_sim_faultcontrol7 %uy_sim_faulty_chirp2 % uy_sim_faulty
+    load uy_sim_faultcontrol13 %uy_sim_faulty_chirp2 % uy_sim_faulty
     U = uy_sim.signals.values(:,1:nu);
     Y = uy_sim.signals.values(:,nu+1:nu+ny);
     start = 2001;
