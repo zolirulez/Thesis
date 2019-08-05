@@ -3,7 +3,7 @@
 
 clearvars
 addpath('matfiles')
-load h1_sim_faultcontrol4 %h1_faulty_chirp % h1_sim_faulty
+load faultcontrol %h1_faulty_chirp % h1_sim_faulty
 Y = h1_sim.signals.values;
 
 P = [];
@@ -38,7 +38,7 @@ end
 start = 1000;
 t = h1_sim.time(start:end,:);
 
-load h1_sim_faultcontrol4 % h1_sim_faulty % h1_faulty_chirp
+load faultcontrol % h1_sim_faulty % h1_faulty_chirp
 Y = h1_sim.signals.values;
 figure(3)
 subplot(211)
@@ -50,7 +50,7 @@ plot(t,Y(start:end,end-9:end))
 xlabel('Time [s]')
 ylabel('Cell enthalpies [kJ/kg]')
 
-load uy_sim_faultcontrol4 % uy_sim_faulty % uy_sim_faulty_chirp
+%load uy_sim_faultcontrol4 % uy_sim_faulty % uy_sim_faulty_chirp
 U = uy_sim.signals.values(:,1:12); 
 Y = uy_sim.signals.values(:,13:end); 
 CRA = U(:,1);
@@ -102,4 +102,4 @@ tfest(iddata0,0)
 tfest(iddata0,1)
 tfest(iddata0,2)
 tfest(iddata0,3)
-save('TGC_faultcontrol4','Tcw','hcw')%save('TGC_faultyestctrl')
+save('TGC_faultcontrol','Tcw','hcw')%save('TGC_faultyestctrl')

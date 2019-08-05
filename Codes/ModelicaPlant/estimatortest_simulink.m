@@ -2,6 +2,11 @@
 
 clearvars
 format long
+addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\bestsimulations')
+addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\objects_inits')
+addpath('C:\Users\u375749\Documents\Thesis\Codes\Linearization')
+modelcreation_simplified
+load faultcontrol % Some of modelcreation_simplified may be overwritten
 
 % Output function
 YFunction = matlabFunction(ginit(y));
@@ -10,11 +15,10 @@ UFunction = u;
 XFunctionSym = x;
 
 % Time parameters, data sets
-load uy_sim_faultcontrol13 %uy_sim_faulty_chirp2 % uy_sim_faulty
 U = uy_sim.signals.values(:,1:nu);
 Y = uy_sim.signals.values(:,nu+1:nu+ny);
 start = 1001;
-finish = length(Y)-1; %10000;
+finish = length(Y)-1;
 U(U(:,5)>0.5,5) = 0.5;
 hRatio = 1/3;
 Y(:,5) = hRatio*[U(round(delayh/2),10)*ones(delayh,1); U(1:end-delayh,10)] + (1-hRatio)*Y(:,2);
@@ -33,25 +37,39 @@ hBP = Y(start,2);
 nw = 2;
 W = [5000; 6000];
 
+% Fault settings
+faultinit_simulink
+faultopinit
+
 % Recording
 record = NaN(nx+nx+ny+nw+1,finish-start+1);
-resrecord = NaN(size(rlsInitial.t,2),finish-start+1);
+resrecord = NaN(size(rlsInitial.t,2),finish+1);
 paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
-outrecord = NaN(size(rlsInitial.t,2),finish-start+1);
-outcorrecord = NaN(size(rlsInitial.t,2),finish-start+1);
-phirecord = NaN(size(rlsInitial.t,1),finish-start+1);
-grecord = NaN(3,finish-start+1);
-faultrecord = NaN(3,finish-start+1);
+outrecord = NaN(size(rlsInitial.t,2),finish+1);
+outcorrecord = NaN(size(rlsInitial.t,2)+2,finish+1);
+grecord = NaN(3,finish+1);
+faultrecord = NaN(3,finish+1);
 recordf = record;
 
 % For earlier states
 meas = Y(start,:);
 measf = Yf(start,:);
-TsParam = 1000;
+TsParam = 100;
 constrainedEstimator = 1;
 inputSample = U(start,:)';
 inputSamplef = Uf(start,:)';
 rng(12345)
+
+% ------------ Fault Operation -----------
+outrecord(:,:) = squeeze(yhat_sim.signals.values + residual_sim.signals.values);
+outcorrecord(1:2,:) = squeeze(yhat_sim.signals.values);
+outcorrecord(4,:) = h1_sim.signals.values(:,end-9);
+resrecord(:,:) = squeeze(residual_sim.signals.values);
+grecord(3,:) = g_sim.signals.values';
+faultrecord(3,:) = g_sim.signals.values' > 0.5;
+detectiontime = find(diff(faultop_sim.signals.values')==1);
+detectiontime = detectiontime(1);
+% TODO: WSave
 
 for it = start:finish
     if ~rem(it,100)
@@ -62,8 +80,6 @@ for it = start:finish
     xffsave = kff.xf;
     kf.markovPredictor(uy(1:nu),uy(nu+1:nu+ny),reshape(uy(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uy(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uy(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uy(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
     kff.markovPredictor(uyf(1:nu),uyf(nu+1:nu+ny),reshape(uyf(nu+ny+1:nu+ny+nx*nx),nx,nx),reshape(uyf(nu+ny+nx*nx+1:nu+ny+nx*nx+nx*nu),nx,nu),reshape(uyf(nu+ny+nx*nx+nx*nu+1:nu+ny+nx*nx+nx*nu+ny*nx),ny,nx), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu),ny,nu), reshape(uyf(nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+1:nu+ny+nx*nx+nx*nu+ny*nx+ny*nu+nx*nx),nx,nx));
-%     kf.x1(4) = 0;
-%     kff.x1(4) = 0;
     % Estimator lability handling
     if any(abs(eig(kff.A - kff.Kx*kff.C)) >= 1) 
         warning('Estimator is not stable')
@@ -81,8 +97,8 @@ for it = start:finish
         Xsf(3) = Xsf(3)*0.05 + d1f*0.95;
         Xsf(7) = Xsf(7)*0.05 + dR*0.95;
         w = 0.11;
-        Xs(4) = Xs(4)*0.2 + 0.8*(CoolProp.PropsSI('T','P',Y(it,1),'H',Y(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
-        Xsf(4) = Xsf(4)*0.2 + 0.8*(CoolProp.PropsSI('T','P',Yf(it,1),'H',Yf(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xs(4) = Xs(4)*0.5 + 0.5*(CoolProp.PropsSI('T','P',Y(it,1),'H',Y(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xsf(4) = Xsf(4)*0.5 + 0.5*(CoolProp.PropsSI('T','P',Yf(it,1),'H',Yf(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
         if constrainedEstimator
             % Extreme constraints
             Xs(4) = -constrainer(-Xs(4),-TA0,2);
@@ -101,51 +117,16 @@ for it = start:finish
     % be the way:
     %     DTf = TBPf - TA0;
     %     Wf = [DQf-phi(2)*rls.t(2)'; rls.t(2)]/DTf;
-    % ------------ Fault Detection -----------
-    if it == start
-        rls.e = zeros(1,length(rls.e));
-    end
+    % ------------ Residual Whitening and Fault Detection -----------
     if it > start+10
-        if exist('fielddata')
-%             Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
-            Apol = [1 -0.9937 -0.002361]; Bpol = [-96.09 99.94]; Cpol = [1 -0.3972];
-            ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
-        else
-            Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];
-            %ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
-            ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
-        end
+        Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];
+        ew = ((filter(Apol,Cpol,resrecord(1,1:it)) + filter(Bpol,Cpol,detrend(U(1:it,12)))')')*sum(Cpol);
     else
         ew = 0;
     end
     [~,fault1] = fdCUSUM.detect(ew(end,1));
     [~,fault2] = fdGLR.detect(ew(end,1));
-    % ------------ Fault Operation -----------
-    if it > start + round(finish/4)%18000 % 5000 TODO 
-        if it == 5002 %all(faultrecord(3,it-19-start:it-start)) && ~faultOperation % TODO
-            disp('Fault detected!')
-            if ~detectiontime
-                detectiontime = it;
-            end 
-            Wsave = reshape(paramrecord(:,detectiontime-500-start),length(phi),length(out));
-            faultOperation = 1;
-        end
-        if ~any(faultrecord(3,it-19-start:it-start))
-%             faultOperation = 0;
-            switchofftime = it;
-        end
-    end
-    TauFault = TsParam;
-    if detectiontime > 0 % faultOperation
-        outcor = phi'*Wsave;
-        hFault = (1-Ts/TauFault)*hFault +...
-            Ts/TauFault*(out(2) - outcor(2));
-        rls.t = Wsave;
-    else
-%         Tfault = 0.8*Tfault;
-        outcor = NaN;
-    end
-    % Equilibrium constraint values influenced by a fault
+    % ------------ Equilibrium constraints for inputs -----------
     hBP = Y(it+1,2);
     try
         TBP = CoolProp.PropsSI('T','P',Y(it+1,1),'H',hBP,'CO2');
@@ -158,18 +139,21 @@ for it = start:finish
     end
     U(it+1,6) = dBP;
     % In case of a fault
-    if detectiontime > 0
-        DQcor = outcor(1);
-%         dBPf = dBP;
-%         for convit = 1:3
-%             DmVf = U(it+1,2)*KvValues(1)*sqrt(dBPf*(Y(it+1,1) - Y(it+1,3)));
-            hBPf = hHR-DQcor/DmV;
-            try
-                dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',hBPf,'CO2');
-            catch
-                dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1)+1e4,'H',hBPf,'CO2');
-            end
-%         end
+    if it >= detectiontime
+        hBPf = outcorrecord(2,it);
+        hHR = Uf(it-delayh,10);
+        dG = Uf(it-delayh,7);
+        CRIT = Uf(it-delayh,3);
+        DmQ = Uf(it-delayh,5);
+        DmV = dG*1e-4*CRIT*48 + DmQ;
+        DQcor = outcorrecord(1,it);
+        hBPfDQ = hHR - DQcor/DmV;
+        outcorrecord(3,it) = hBPfDQ;
+        try
+            dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',hBPf,'CO2');
+        catch
+            dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1)+1e4,'H',hBPf,'CO2');
+        end
         Yf(it+1,2) = hBPf;
         Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
         d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
@@ -229,13 +213,8 @@ for it = start:finish
     traceP1f = trace(kff.P1);
     record(:,it-start+1) = [Xs+kf.xf; traceP1; statecorrection; kf.e; W];
     recordf(:,it-start+1) = [Xsf+kff.xf; traceP1f; statecorrectionf; kff.e; Wf];
-    resrecord(:,it-start+1) = rls.e;
-    paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
-    outrecord(:,it-start+1) = out';
-    outcorrecord(:,it-start+1) = outcor';
-    phirecord(:,it-start+1) = phi;
-    grecord(:,it-start+1) = [fdCUSUM.g; fdGLR.g; fdEM.g];
-    faultrecord(:,it-start+1) = [fault1; fault2; fault3];
+    grecord(1:2,it-start+1) = [fdCUSUM.g; fdGLR.g];
+    faultrecord(1:2,it-start+1) = [fault1; fault2];
 end
 
-plotting
+plotting_simulink

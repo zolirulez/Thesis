@@ -1,5 +1,4 @@
-load fault_sim_faultcontrol2 %fault_chirp
-load TGC_faultcontrol2.mat
+load TGC_faultcontrol.mat
 
 t = start:Ts:finish;
 tcw = start:Ts:it;

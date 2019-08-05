@@ -15,7 +15,11 @@ if exist('fielddata')
     % 20 percent should be faulty in the whole window to fire
     param.Threshold = 1/(2*variance*param.WindowLength)*(meanFD.m1*param.WindowLength*0.2)^2;
 else
-    variance = 1e7;
+    if enableBatch
+        variance = 1e7;
+    else
+        variance = 2e6;
+    end
     param.Threshold = 1/(2*variance*param.WindowLength)*(meanFD.m1*param.WindowLength*0.2)^2;
 end
 param.InitialGuess = [meanFD.m1,param.Threshold];
