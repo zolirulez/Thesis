@@ -3,7 +3,7 @@
 
 clearvars
 addpath('matfiles')
-load faultcontrol %h1_faulty_chirp % h1_sim_faulty
+load faultignore_ta0 %h1_faulty_chirp % h1_sim_faulty
 Y = h1_sim.signals.values;
 
 P = [];
@@ -38,7 +38,7 @@ end
 start = 1000;
 t = h1_sim.time(start:end,:);
 
-load faultcontrol % h1_sim_faulty % h1_faulty_chirp
+load faultignore % h1_sim_faulty % h1_faulty_chirp
 Y = h1_sim.signals.values;
 figure(3)
 subplot(211)
@@ -102,4 +102,4 @@ tfest(iddata0,0)
 tfest(iddata0,1)
 tfest(iddata0,2)
 tfest(iddata0,3)
-save('TGC_faultcontrol','Tcw','hcw')%save('TGC_faultyestctrl')
+save('TGC_faultignore_ta0','Tcw','hcw')%save('TGC_faultyestctrl')

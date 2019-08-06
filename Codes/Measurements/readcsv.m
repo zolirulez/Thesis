@@ -4,7 +4,7 @@ addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant')
 tab.Properties.VariableNames'
 figure(1)
 start = 1.5e4;
-plot(tab{start:end,2:end})
+% plot(tab{start:end,2:end})
 fielddata = tab{start:end,:};
 %     {'t'        }
 %     {'pGC'      }
@@ -68,6 +68,7 @@ hHR = NaN(length(fielddata),1);
 hHRd = NaN(length(fielddata),1);
 DmQ = NaN(length(fielddata),1);
 hBP = NaN(length(fielddata),1);
+hBPoriginal = NaN(length(fielddata),1);
 hR = NaN(length(fielddata),1);
 qR = NaN(length(fielddata),1);
 TA1 = NaN(length(fielddata),1);
@@ -80,11 +81,13 @@ for it = 1:length(fielddata)
     hG(it,1) = CoolProp.PropsSI('H','P',pR(it,1),'Q',1,'CO2');
     hL(it,1) = CoolProp.PropsSI('H','P',pR(it,1),'Q',0,'CO2');
     try
-        hBP(it,1) = CoolProp.PropsSI('H','P',p1(it,1),'T',TBP(it,1),'CO2');
+        hBPoriginal(it,1) = CoolProp.PropsSI('H','P',p1(it,1),'T',TBP(it,1),'CO2');
         dBP(it,1) = CoolProp.PropsSI('D','P',p1(it,1),'T',TBP(it,1),'CO2');
-        if hBP(it) > CoolProp.PropsSI('H','P',p1(it,1),'Q',0,'CO2') % Right side of saturation curve
+        if hBPoriginal(it) > CoolProp.PropsSI('H','P',p1(it,1),'Q',0,'CO2') % Right side of saturation curve
             hBP(it,1) = CoolProp.PropsSI('H','P',p1(it,1),'Q',0,'CO2') - 1e3;
             dBP(it,1) = CoolProp.PropsSI('D','P',p1(it,1),'Q',0,'CO2');
+        else
+            hBP(it,1) = hBPoriginal(it);
         end
     catch % Under saturation curve
         hBP(it,1) = CoolProp.PropsSI('H','P',p1(it,1),'Q',0,'CO2') - 1e3; % Substraction for safety
