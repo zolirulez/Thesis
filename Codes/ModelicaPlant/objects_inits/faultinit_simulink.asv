@@ -5,13 +5,13 @@ fdGLR = FaultDetector;
 meanFD.m0 = 0;
 param.WindowLength = 100;
 if exist('fielddata')
-    meanFD.m1 = 1e4; %-sqrt(variance)*5;
+    meanFD.m1 = 2e2; %-sqrt(variance)*5;
 else
-    meanFD.m1 = 1e4; %1e6 % sqrt(variance)*5;
+    meanFD.m1 = 10000; %1e6 % sqrt(variance)*5;
 end
 % Variances are better bigger: residuals are not entirely white
 if exist('fielddata')
-    variance = 1e6; %1e6; % 6e3; %1.8614e+06;
+    variance = 3e5; %1e6; % 6e3; %1.8614e+06;
     % 20 percent should be faulty in the whole window to fire
     param.Threshold = 1/(2*variance*param.WindowLength)*(meanFD.m1*param.WindowLength*0.2)^2;
 else
@@ -44,9 +44,9 @@ param.SamplingTime = Ts;
 param.WindowLength = 10;
 % Here variance should rather be interpreted as a maximum bound
 if exist('fielddata')
-    param.MeanDensityRatio = 0.1;
+    param.MeanDensityRatio = 0.2;
     param.ResponsibilityTimeConstant = 100;
-    variance = diag([1e6; 1e7])*2^2; 
+    variance = diag([3e5; 2e7])*2^2; 
 else
     param.MeanDensityRatio = 0.1;
     param.ResponsibilityTimeConstant = 10;

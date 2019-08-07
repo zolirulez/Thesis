@@ -1,3 +1,4 @@
+clearvars
 close all
 addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\bestsimulations')
 addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\objects_inits')
@@ -5,14 +6,19 @@ addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\objects_inits')
 % Fault plot
 h = figure(1);
 load faultcontrol
-plot(fault_sim.signals.values)
-load faultcontrol_ta0
+faultconversion
+plot(faultest(:,1))plot(fault_sim.signals.values)
 hold on
+
+load faultcontrol_ta0
+faultconversion
 plot(fault_sim.signals.values)
+plot(faultest(:,1))
 hold off
 xlabel('Time [s]')
 ylabel('Fault [K]')
-legend('Flat fault','Insulation fault')
+legend({'Flat fault:','\quad Estimation','Insulation fault:',...
+    '\quad Estimation'},'Interpreter','latex')
 saveas(h,'fault.png')
 
 % COP plot
@@ -123,11 +129,9 @@ h = figure(12);
 subplot(221)
 plot(tcw,hcw(start:it)/1000,'LineWidth',2)
 hold on
-plot(t,record(2,:)/1000)
-plot(t,record(6,:)/1000)
-plot(t,record(8,:)/1000)
+plot(t,record(2,:)/1000,'LineWidth',1.5)
+plot(t,record(8,:)/1000,'LineWidth',1.5)
 plot(t,recordf(2,:)/1000,'--')
-plot(t,recordf(6,:)/1000,'--')
 plot(t,recordf(8,:)/1000,'--')
 hold off
 ylim([-50 450])
@@ -140,7 +144,7 @@ h = figure(13);
 subplot(221)
 plot(tcw,Tcw(start:it)-273.15,'LineWidth',2)
 hold on
-plot(t,record(4,:)-273.15)
+plot(t,record(4,:)-273.15,'LineWidth',1.5)
 plot(t,recordf(4,:)-273.15,'--')
 hold off
 xlabel('Time [s]')
@@ -158,11 +162,11 @@ h = figure(12);
 subplot(222)
 plot(tcw,hcw(start:it)/1000,'LineWidth',2)
 hold on
-plot(t,record(2,:)/1000)
-plot(t,record(6,:)/1000)
-plot(t,record(8,:)/1000)
+plot(t,record(2,:)/1000,'LineWidth',1.5)
+
+plot(t,record(8,:)/1000,'LineWidth',1.5)
 plot(t,recordf(2,:)/1000,'--')
-plot(t,recordf(6,:)/1000,'--')
+
 plot(t,recordf(8,:)/1000,'--')
 hold off
 ylim([-50 450])
@@ -175,13 +179,46 @@ h = figure(13);
 subplot(222)
 plot(tcw,Tcw(start:it)-273.15,'LineWidth',2)
 hold on
-plot(t,record(4,:)-273.15)
+plot(t,record(4,:)-273.15,'LineWidth',1.5)
 plot(t,recordf(4,:)-273.15)
 hold off
 xlabel('Time [s]')
 ylabel('Temperature [C]')
 title('Fault ignored, parameter sample time: 1000 s')
 % saveas(h,'TAhat.png')
+
+h = figure(15);
+plot(t,record(6,:)/1000,'LineWidth',1.5)
+hold on
+plot(t,recordf(6,:)/1000,'--','LineWidth',1.5)
+hold off
+xlim([1000 length(Y)])
+xlabel('Time [s]')
+ylabel('Receiver enthalpy [C]')
+legend('Fault ignored','Fault considered')
+saveas(h,'hR.png')
+
+% Residual statistics plot
+h = figure(16);
+resid = resrecord(1,2001:5000)';
+subplot(221)
+autocorr(detrend(resid))
+subplot(222)
+[pxx,f,pxxc] = periodogram(resid,rectwin(length(resid)),...
+    length(resid),1,'ConfidenceLevel',0.99);
+cpxx = cumsum(pxx)./sum(pxx);
+plot(f,cpxx,'b',f,f./max(f)+0.05,'r--',f+0.05*max(f),f./max(f),'r--')
+xlabel('Frequency')
+title('Cum. periodrogram with 99% conf. interval')
+subplot(223)
+probplot('normal',resid)
+title('Prob. plot for normal dist.')
+subplot(224)
+var_resid1 = var(resid);
+histfit(resid,50)
+ylabel('Sample frequency')
+title('Histogram of data')
+saveas(h,'resstat.png')
 
 % -----------------------------------------------------------------
 simulationstring = 'faultcontrol_ta0';
@@ -253,16 +290,14 @@ ylabel('Innovation [kJ/kg]')
 xlim([1000 length(Y)])
 saveas(h,'innotrace.png')
 
-% State observations
+% State observations: enthalpy
 h = figure(12);
 subplot(223)
 plot(tcw,hcw(start:it)/1000,'LineWidth',2)
 hold on
-plot(t,record(2,:)/1000)
-plot(t,record(6,:)/1000)
-plot(t,record(8,:)/1000)
+plot(t,record(2,:)/1000,'LineWidth',1.5)
+plot(t,record(8,:)/1000,'LineWidth',1.5)
 plot(t,recordf(2,:)/1000,'--')
-plot(t,recordf(6,:)/1000,'--')
 plot(t,recordf(8,:)/1000,'--')
 hold off
 ylim([-50 450])
@@ -271,17 +306,65 @@ ylabel('Enthalpy [kJ/kg]')
 title('Fault operation, parameter sample time: 100 s')
 % saveas(h,'hhat.png')
 
+% State observations: temperature
 h = figure(13);
 subplot(223)
 plot(tcw,Tcw(start:it)-273.15,'LineWidth',2)
 hold on
-plot(t,record(4,:)-273.15)
+plot(t,record(4,:)-273.15,'LineWidth',1.5)
 plot(t,recordf(4,:)-273.15,'--')
 hold off
 xlabel('Time [s]')
 ylabel('Temperature [C]')
 title('Fault operation, parameter sample time: 100 s')
 % saveas(h,'TAhat.png')
+
+% Residuals and detectors
+h= figure(17);
+subplot(311)
+plot(1:finish,resrecord(:,1:finish)/1e3)
+ylabel('Residuals')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+legend({'$\dot{\tilde{Q}}$ [kW]','$\tilde{h}_{BP}$ [kJ/kg]'},'Interpreter','latex')
+subplot(334)
+plot(2000:finish,grecord(1,2001:end)',0:finish,fdCUSUM.h*rectwin(length(Y)),'r--')
+ylabel('Decision function, g')
+xlabel('Time [s]')
+title('CUSUM')
+xlim([2000 length(Y)])
+subplot(337)
+plot(2000:finish,grecord(1,2001:end)'>fdCUSUM.h,'LineWidth',2)
+ylabel('Fault detection')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+% GLR
+subplot(335)
+plot(2000:finish,grecord(2,2001:end)',0:finish,fdGLR.h*rectwin(length(Y)),'r--')
+ylim([0 fdGLR.h*10])
+ylabel('Decision function, g')
+xlabel('Time [s]')
+title('GLR')
+xlim([2000 length(Y)])
+subplot(338)
+plot(2000:finish,grecord(2,2001:end)'>fdGLR.h,'LineWidth',2)
+ylabel('Fault detection')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+% EM
+M = 500;
+subplot(336)
+plot(2000:finish,grecord(3,2001:end)',0:finish,fdEM.h*rectwin(length(Y)),'r--')
+ylabel('Decision function, g')
+xlabel('Time [s]')
+title('Expectation Maximization (multidim.)')
+xlim([2000 length(Y)])
+subplot(339)
+plot(2000:finish,grecord(3,2001:end)'>fdEM.h,'LineWidth',2)
+ylabel('Fault detection')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+saveas(h,'resid.png')
 
 % -----------------------------------------------------------------
 simulationstring = 'faultcontrol_ta0';
@@ -310,29 +393,29 @@ h = figure(12);
 subplot(224)
 plot(tcw,hcw(start:it)/1000,'LineWidth',2)
 hold on
-plot(t,record(2,:)/1000)
-plot(t,record(6,:)/1000)
-plot(t,record(8,:)/1000)
+plot(t,record(2,:)/1000,'LineWidth',1.5)
+
+plot(t,record(8,:)/1000,'LineWidth',1.5)
 plot(t,recordf(2,:)/1000,'--')
-plot(t,recordf(6,:)/1000,'--')
+
 plot(t,recordf(8,:)/1000,'--')
 hold off
 ylim([-50 450])
 xlabel('Time [s]')
 ylabel('Enthalpy [kJ/kg]')
-% legend({'Theoretical approximation of $h_{GC}$','$\hat{h}_{GC}$, fault ignored',...
-%     '$\hat{h}_{R}$, fault ignored','$\Delta h$, fault ignored',...
-%     '$\hat{h}_{GC}$, fault considered','$\hat{h}_{R}$, fault considered',...
-%     '$\Delta h$, fault considered'},'Location','southwestoutside'...
-%     ,'Interpreter','Latex');
+legend({'Theoretical approximation of $h_{GC}$','$\hat{h}_{GC}$, fault ignored',...
+    '$\Delta h$, fault ignored',...
+    '$\hat{h}_{GC}$, fault considered',...
+    '$\Delta h$, fault considered'},'Location','southwest'...
+    ,'Interpreter','Latex');
 title('Fault operation, parameter sample time: 1000 s')
 saveas(h,'hhat.png')
 
-h = figure(13)
+h = figure(13);
 subplot(224)
 plot(tcw,Tcw(start:it)-273.15,'LineWidth',2)
 hold on
-plot(t,record(4,:)-273.15)
+plot(t,record(4,:)-273.15,'LineWidth',1.5)
 plot(t,recordf(4,:)-273.15,'--')
 hold off
 xlabel('Time [s]')
@@ -345,5 +428,153 @@ saveas(h,'TAhat.png')
 
 % -----------------------------------------------------------------
 addpath('C:\Users\u375749\Documents\Thesis\Codes\Measurements')
-%main_meas
+load datatreatment
+h = figure(14);
+plot(hBPoriginal/1e3,'LineWidth',1.5)
+hold on
+plot(hBP/1e3,'--','LineWidth',1.5)
+hold off
+xlabel('Time [s]')
+ylabel('Enthalpy measurement [kJ/kg]')
+legend({'Before correction','After placing on the saturation line'},'Location','best')
+saveas(h,'datatreatment.png')
 
+% Running the field experiment
+TsParam = 1000;
+main_meas
+faultconversion
+
+% Fault and input saturation 7748 12367
+h = figure(18);
+subplot(121)
+plot([zeros(1,7747) -5*ones(1,12367-7747) zeros(1,length(Y)-12368)],'LineWidth',1.5)
+hold on
+plot(faultest)
+hold off
+xlabel('Time [s]')
+ylabel('Fault [K]')
+legend({'Fault','Estimation from $\hat{h}_{BP}$',...
+    'Estimation from $h_{HR}-\dot{\hat{Q}}/\dot{m}_{HR}$'},...
+    'location','west','Interpreter','latex')
+ylim([-7 2])
+subplot(122)
+plot(1:length(Y),U(:,[1 2 4]))
+load CRMT
+hold on
+plot(1:length(Y), CRMT)
+hold off
+xlabel('Time [s]')
+ylabel('Input capacity ratios [-]')
+ylim([0 1.1])
+legend({'$CR_A$','$CR_{V}$','$CR_{G}$','$CR_{MT}$'},...
+    'location','west','Interpreter','latex')
+saveas(h,'faultinputs_field.png')
+
+% Residuals and detectors
+h= figure(19);
+subplot(321)
+plot(start+2:length(Y),ew/1e3)
+hold on
+plot(start+1:length(Y),resrecord(1,:)/1e3,'LineWidth',2)
+hold off
+ylabel('Residuals')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+ylim([-20 40])
+legend({'Whitened $\dot{\tilde{Q}}$','$\dot{\tilde{Q}}$ [kW]'},'Interpreter','latex')
+subplot(322)
+plot(start+1:length(Y),resrecord(2,:)/1e3)
+xlim([2000 length(Y)])
+xlabel('Time [s]')
+legend({'$\tilde{h}_{BP}$ [kJ/kg]'},'Interpreter','latex')
+subplot(334)
+plot(start:finish,grecord(1,:)',0:finish,fdCUSUM.h*rectwin(length(Y)),'r--')
+ylabel('Decision function, g')
+xlabel('Time [s]')
+title('CUSUM')
+xlim([2000 length(Y)])
+subplot(337)
+plot(start:finish,grecord(1,:)'>fdCUSUM.h,'LineWidth',2)
+ylabel('Fault detection')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+% GLR
+subplot(335)
+plot(start:finish,grecord(2,:)',0:finish,fdGLR.h*rectwin(length(Y)),'r--')
+ylim([0 fdGLR.h*10])
+ylabel('Decision function, g')
+xlabel('Time [s]')
+title('GLR')
+xlim([2000 length(Y)])
+subplot(338)
+plot(start:finish,grecord(2,:)'>fdGLR.h,'LineWidth',2)
+ylabel('Fault detection')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+% EM
+M = 500;
+subplot(336)
+plot(start:finish,grecord(3,:)',0:finish,fdEM.h*rectwin(length(Y)),'r--')
+ylabel('Decision function, g')
+xlabel('Time [s]')
+title('Expectation Maximization (multidim.)')
+xlim([2000 length(Y)])
+subplot(339)
+plot(start:finish,grecord(3,:)'>fdEM.h,'LineWidth',2)
+ylabel('Fault detection')
+xlabel('Time [s]')
+xlim([2000 length(Y)])
+saveas(h,'resid_field.png')
+
+% State estimations
+t = start:Ts:finish;
+figure(20)
+clf
+subplot(221)
+hold on
+plot(t,record(1,:)/1e5,'LineWidth',1.5)
+plot(t,record(5,:)/1e5,'LineWidth',1.5)
+plot(t,recordf(1,:)/1e5,'--')
+plot(t,recordf(5,:)/1e5,'--')
+hold off
+ylim([20 80])
+xlabel('Time [s]')
+ylabel('Pressure [bar]')
+legend({'$p_{GC}$','$p_{R}$','$p_{GCc}$','$p_{Rc}$'},...
+    'location','southwest','Interpreter','latex')
+subplot(222)
+hold on
+plot(t,record(2,:)/1000,'LineWidth',1.5)
+plot(t,record(6,:)/1000,'LineWidth',1.5)
+plot(t,record(8,:)/1000,'LineWidth',1.5)
+plot(t,recordf(2,:)/1000,'--')
+plot(t,recordf(6,:)/1000,'--')
+plot(t,recordf(8,:)/1000,'--')
+hold off
+ylim([-50 600])
+xlabel('Time [s]')
+ylabel('Enthalpy [kJ/kg]')
+legend({'$h_{GC}$','$h_{R}$','$\Delta h$','$h_{GCc}$','$h_{Rc}$',...
+    '$\Delta h_c$'},'location','southwest','Interpreter','latex')
+subplot(223)
+hold on
+plot(t,record(4,:)-273.15,'LineWidth',1.5)
+plot(t,recordf(4,:)-273.15,'--')
+hold off
+% ylim([-10 120])
+xlabel('Time [s]')
+ylabel('Temperature [C]')
+legend({'$T_{A}$','$T_{Ac}$'},'location','southwest','Interpreter','latex')
+subplot(224)
+hold on
+plot(t,record(3,:),'LineWidth',1.5)
+plot(t,record(7,:),'LineWidth',1.5)
+plot(t,recordf(3,:),'--')
+plot(t,recordf(7,:),'--')
+hold off
+ylim([0 900])
+xlabel('Time [s]')
+ylabel('Density [kg/m^3]')
+legend({'$\rho_{GC}$','$\rho_{R}$','$\rho_{GCc}$','$\rho_{Rc}$'},...
+    'location','southwest','Interpreter','latex')
+saveas(h,'states_field.png')

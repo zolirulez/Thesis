@@ -68,8 +68,12 @@ resrecord(:,:) = squeeze(residual_sim.signals.values);
 grecord(3,:) = g_sim.signals.values';
 faultrecord(3,:) = g_sim.signals.values' > 0.5;
 detectiontime = find(diff(faultop_sim.signals.values')==1);
-
-detectiontime = detectiontime(1);
+try
+    detectiontime = detectiontime(1);
+catch
+    detectiontime = find(faultrecord(3,2000:end)>0);
+    detectiontime = detectiontime(1) + 2000;
+end
 
 for it = start:finish
     if ~rem(it,100)
@@ -119,13 +123,14 @@ for it = start:finish
     %     Wf = [DQf-phi(2)*rls.t(2)'; rls.t(2)]/DTf;
     % ------------ Residual Whitening and Fault Detection -----------
     if it > start+10
-        Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];
-        ew = ((filter(Apol,Cpol,resrecord(1,1:it)) + filter(Bpol,Cpol,detrend(U(1:it,12)))')')*sum(Cpol);
+%         Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];
+%         ew = ((filter(Apol,Cpol,resrecord(1,1:it)) + filter(Bpol,Cpol,detrend(U(1:it,12)))')')*sum(Cpol);
+        ew = rls;
     else
         ew = 0;
     end
-    [~,fault1] = fdCUSUM.detect(ew(end,1));
-    [~,fault2] = fdGLR.detect(ew(end,1));
+    [~,fault1] = fdCUSUM.detect(ew(end));
+    [~,fault2] = fdGLR.detect(ew(end));
     % ------------ Equilibrium constraints for inputs -----------
     hBP = Y(it+1,2);
     try

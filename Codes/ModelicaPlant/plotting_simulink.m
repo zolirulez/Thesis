@@ -167,16 +167,11 @@ end
 %% Residual
 
 for it2 = 1:2
-    if it2 ==1
-        figure(11)
-        resid = resrecord(1,:);
-    else
-        figure(12)
-        resid = [0; ew];
-    end
+    figure(11)
+    resid = resrecord(1,:);
     resid = resid(:);
     resid(1) = 0;
-    resid_normal = [0; resid(2000:4000,1)];
+    resid_normal = [0 resid(2000:4000,1)'];
     subplot(221)
     autocorr(detrend(resid_normal))
     subplot(222)
@@ -218,10 +213,10 @@ end
 
 % --------------- Detection ----------------------
 figure(13)
+clf
 subplot(321)
 hold on
 plot(start+1:it,resrecord(1,start+1:it))
-plot(1:it,ew,'LineWidth',2);
 hold off
 ylabel('Whitened residual')
 xlabel('Time [s]')

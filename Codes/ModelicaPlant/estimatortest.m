@@ -86,7 +86,7 @@ record = NaN(nx+nx+ny+nw+1,finish-start+1);
 resrecord = NaN(size(rlsInitial.t,2),finish-start+1);
 paramrecord = NaN(size(rls.t,1)*size(rls.t,2),finish-start+1);
 outrecord = NaN(size(rlsInitial.t,2),finish-start+1);
-outcorrecord = NaN(size(rlsInitial.t,2),finish-start+1);
+outcorrecord = NaN(size(rlsInitial.t,2)+1,finish-start+1);
 phirecord = NaN(size(rlsInitial.t,1),finish-start+1);
 grecord = NaN(3,finish-start+1);
 faultrecord = NaN(3,finish-start+1);
@@ -196,7 +196,7 @@ for it = start:finish
         if exist('fielddata')
 %             Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
             Apol = [1 -0.9937 -0.002361]; Bpol = [-96.09 99.94]; Cpol = [1 -0.3972];
-            ew = (filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')';
+            ew = ((filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')')*sum(Cpol)/sum(Apol);
         else
             Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];
             %ew = rls.e; %filter(Apol,Cpol,resrecord(1,1:it-start)) ;
@@ -210,7 +210,7 @@ for it = start:finish
     [~,fault2] = fdGLR.detect(ew(end,1));
     % ------------ Fault Operation -----------
     if it > start + round(finish/4)%18000 % 5000 TODO 
-        if it == 5002 %all(faultrecord(3,it-19-start:it-start)) && ~faultOperation % TODO
+        if all(faultrecord(3,it-19-start:it-start)) && ~faultOperation % TODO
             disp('Fault detected!')
             if ~detectiontime
                 detectiontime = it;
@@ -226,8 +226,6 @@ for it = start:finish
     TauFault = TsParam;
     if detectiontime > 0 % faultOperation
         outcor = phi'*Wsave;
-        hFault = (1-Ts/TauFault)*hFault +...
-            Ts/TauFault*(out(2) - outcor(2));
         rls.t = Wsave;
     else
 %         Tfault = 0.8*Tfault;
@@ -247,17 +245,20 @@ for it = start:finish
     U(it+1,6) = dBP;
     % In case of a fault
     if detectiontime > 0
+        hBPf = outcor(2);
+        hHR = Uf(it-delayh,10);
+        dG = Uf(it-delayh,7);
+        CRIT = Uf(it-delayh,3);
+        DmQ = Uf(it-delayh,5);
+        DmV = dG*1e-4*CRIT*48 + DmQ;
         DQcor = outcor(1);
-%         dBPf = dBP;
-%         for convit = 1:3
-%             DmVf = U(it+1,2)*KvValues(1)*sqrt(dBPf*(Y(it+1,1) - Y(it+1,3)));
-            hBPf = hHR-DQcor/DmV;
-            try
-                dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',hBPf,'CO2');
-            catch
-                dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1)+1e4,'H',hBPf,'CO2');
-            end
-%         end
+        hBPfDQ = hHR - DQcor/DmV;
+        outcorrecord(3,it) = hBPfDQ;
+        try
+            dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',hBPf,'CO2');
+        catch
+            dBPf = CoolProp.PropsSI('D','P',Yf(it+1,1)+1e4,'H',hBPf,'CO2');
+        end
         Yf(it+1,2) = hBPf;
         Yf(it+1,5) = Y(it+1,5) - (1-hRatio)*(hBP - hBPf);
         d1f = CoolProp.PropsSI('D','P',Yf(it+1,1),'H',Yf(it+1,5),'CO2');
@@ -320,10 +321,10 @@ for it = start:finish
     resrecord(:,it-start+1) = rls.e;
     paramrecord(:,it-start+1) = reshape(rls.t,size(rls.t,1)*size(rls.t,2),1);
     outrecord(:,it-start+1) = out';
-    outcorrecord(:,it-start+1) = outcor';
+    outcorrecord(1:2,it+1) = outcor';
     phirecord(:,it-start+1) = phi;
     grecord(:,it-start+1) = [fdCUSUM.g; fdGLR.g; fdEM.g];
     faultrecord(:,it-start+1) = [fault1; fault2; fault3];
 end
 
-plotting
+% plotting
