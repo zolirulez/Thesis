@@ -1,9 +1,9 @@
-function [AIC,BIC,FPE,beststrt] = findstruct(nstruc,losse,losst,N,direction)
+function [AIC,BIC,FPE,beststrt,figurehandle] = findstruct(nstruc,losse,losst,N,direction)
 
 disp('Estimations data')
 beststre=[]; bestlosse=[];
 np=sum(nstruc(:,1:3)')';
-figure(2)
+figure(40)
 plot(np,losse,'+'); grid; title('Loss - Estimation set')
 % ylim([1 1.5])
 xlabel('Number of parameters');
@@ -28,7 +28,7 @@ disp('Test data')
 disp('    Loss               structure ')
 bestlosst=[]; beststrt = [];
 np=sum(nstruc(:,1:3)')';
-figure(3)
+figure(40)
 plot(np,losst,'+'); grid; title('Loss - Test data');
 % ylim([1 1.15])
 xlabel('# of parms');
@@ -49,16 +49,16 @@ loss=[bestlosse bestlosst np]; % and ns contain information to be used later
 
 disp('      Diff                Loss               #parm')
 disp([[NaN NaN; diff(loss(:,1:2))] loss])
-h = figure(4)
+h = figure(40)
 hold on
-plot(np,loss(:,1:end-1),'*-');
+plot(np(1:end-1),loss(1:end-1,1:end-1),'*-');
 hold off
 if direction == 2
-    legend('Estimation data, forward','Test data, forward',...
-        'Estimation data, backward','Test data, backward');
+    legend({'Estimation data, forward','Test data, forward',...
+        'Estimation data, backward','Test data, backward'},'Location','east');
 %     ylim([0.95 1.15]), grid;
     title('Loss function'); xlabel('Number of parameters');
-    saveas(h,'lossfunctions.png')
+    % saveas(h,'lossfunctions.png')
 end
 
 
@@ -94,26 +94,28 @@ for i=1:n,
     ic(i,2)=(1+log(N)*np(i)/N)*loss(i);  % BIC
     ic(i,3)=(N+np(i))*loss(i)/(N-np(i)); % FPE
 end
-h=figure(5);
+figurehandle = figure(30);
+subplot(131)
+% h5=figure(5);
 grid;
 if direction == 1
     hold on
-    plot(np,ic(:,1),'o-');
-    plot(np,ic(:,2),'o-');
-    plot(np,ic(:,3),'o--');
+    plot(np(1:end-1),ic(1:end-1,1),'o-');
+    plot(np(1:end-1),ic(1:end-1,2),'o-');
+    plot(np(1:end-1),ic(1:end-1,3),'o--');
     hold off
 else
     hold on
-    plot(np,ic(:,1),'*-');
-    plot(np,ic(:,2),'*-');
-    plot(np,ic(:,3),'*--');
+    plot(np(1:end-1),ic(1:end-1,1),'*-');
+    plot(np(1:end-1),ic(1:end-1,2),'*-');
+    plot(np(1:end-1),ic(1:end-1,3),'*--');
     hold off
     title('AIC, BIC, FPE'); xlabel('Number of parameters');
-    legend('AIC forward','BIC forward','FPE forward',...
-        'AIC backward','BIC backward','FPE backward')
+    legend({'AIC forward','BIC forward','FPE forward',...
+        'AIC backward','BIC backward','FPE backward'},'Location','east')
 %     ylim([1 1.15])
     grid;
-    saveas(h,'infcriteria.png')
+    % saveas(h5,'infcriteria.png')
 end
 
 [mi,im]=min(ic);
@@ -122,3 +124,7 @@ disp(np(im)')
 AIC = np(im(1));
 BIC = np(im(2));
 FPE = np(im(3));
+
+
+
+

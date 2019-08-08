@@ -195,7 +195,8 @@ for it = start:finish
     if it > start+10
         if exist('fielddata')
 %             Apol = [1 -0.991]; Bpol = [-0.8966]; Cpol = [1 -0.424 0.05303 0.2916];
-            Apol = [1 -0.9937 -0.002361]; Bpol = [-96.09 99.94]; Cpol = [1 -0.3972];
+%             Apol = [1 -0.9937 -0.002361]; Bpol = [-96.09 99.94]; Cpol = [1 -0.3972];
+            Apol = [1 -0.9945]; Bpol = [5.46]; Cpol = [1 -0.3745 -0.1045 0.2085];
             ew = ((filter(Apol,Cpol,resrecord(1,1:it-start)) - filter(Bpol,Cpol,U(start+1:it,12)-mean(U(start+1:it,12)))')')*sum(Cpol)/sum(Apol);
         else
             Apol = [1 -0.991 0.9945]; Bpol = [0.2985]; Cpol = [1 -1.852 0.8701];

@@ -1,3 +1,0 @@
-for it2 = 1:length(Y)
-    fault
-end

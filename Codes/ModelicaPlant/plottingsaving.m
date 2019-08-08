@@ -5,24 +5,29 @@ addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant\objects_inits')
 
 % Fault plot
 h = figure(1);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 load faultcontrol
+clear fielddata
 faultconversion
 plot(faultest(:,1))
 hold on
 plot(fault_sim.signals.values,'LineWidth',1.5)
 load faultcontrol_ta0
+clear fielddata
 faultconversion
 plot(faultest(:,1))
 plot(fault_sim.signals.values,'LineWidth',1.5)
 hold off
+xlim([0 length(Y)])
 xlabel('Time [s]')
 ylabel('Fault [K]')
 legend({'Estimation of:','\quad flat fault','Estimation of:',...
-    '\quad insulation fault'},'location','southeast','Interpreter','latex')
+    '\quad insulation fault'},'location','southwest','Interpreter','latex')
 saveas(h,'fault.png')
 
 % COP plot
 h = figure(2);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 load faultignore
 plot(COP_sim.signals.values(:,1))
 load faultignore_ta0
@@ -42,6 +47,7 @@ saveas(h,'COP.png')
 
 % Input saturation plot
 h = figure(3);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 load faultignore_ta0
 plot(inputs_sim.Data(:,[1 5]))
 load faultcontrol_ta0
@@ -59,6 +65,7 @@ saveas(h,'inputs.png')
 
 % Ambient temperature plot
 h = figure(4);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(uy_sim.signals.values(:,12)-273.15)
 xlabel('Time [s]')
 ylabel('Ambient temperature [C]')
@@ -67,6 +74,7 @@ saveas(h,'ambient.png')
 
 % Enthalpy GC and evaporator plot
 h = figure(5);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 load faultignore_ta0
 plot(446.5e3*rectwin(20000),'LineWidth',2)
 hold on
@@ -85,6 +93,7 @@ saveas(h,'evapenthalpies.png')
 
 % GC entahlpy plot
 h = figure(6);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 load TGC_faultignore_ta0
 plot(hcw/1e3,'LineWidth',3)
 hold on
@@ -105,6 +114,7 @@ estimatortest_simulink
 
 % Measurement reestimation
 h = figure(7);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(1000:finish,Y(1001:end,2)/1000)
 hold on
 plot(1000:finish,outcorrecord(4,1001:end)/1000,'LineWidth',2)
@@ -165,7 +175,6 @@ hold on
 plot(t,record(2,:)/1000,'LineWidth',1.5)
 plot(t,record(8,:)/1000,'LineWidth',1.5)
 plot(t,recordf(2,:)/1000,'--')
-
 plot(t,recordf(8,:)/1000,'--')
 hold off
 ylim([-50 450])
@@ -187,6 +196,7 @@ title('Fault ignored, parameter sample time: 1000 s')
 % saveas(h,'TAhat.png')
 
 h = figure(15);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(t,record(6,:)/1000,'LineWidth',1.5)
 hold on
 plot(t,recordf(6,:)/1000,'--','LineWidth',1.5)
@@ -199,9 +209,14 @@ saveas(h,'hR.png')
 
 % Residual statistics plot
 h = figure(16);
+set(h, 'Position',  [100, 100, 100+1400, 100+400])
 resid = resrecord(1,2001:5000)';
 subplot(221)
-autocorr(detrend(resid))
+autocorr(detrend(resid),'NumLags',1000)
+[acf,lags,bounds] = autocorr(detrend(resid),'NumLags',1000);
+hold on
+plot(lags,bounds*ones(1,length(lags)),'b--')
+hold off
 subplot(222)
 [pxx,f,pxxc] = periodogram(resid,rectwin(length(resid)),...
     length(resid),1,'ConfidenceLevel',0.99);
@@ -227,6 +242,7 @@ estimatortest_simulink
 
 % Measurement reestimation
 h = figure(8);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(1000:finish,Y(1001:end,2)/1000)
 hold on
 plot(1000:finish,outcorrecord(4,1001:end)/1000,'LineWidth',2)
@@ -265,6 +281,7 @@ hold off
 
 % Trace of P1 and innovation
 h = figure(10);
+set(h, 'Position',  [100, 100, 100+1400, 100+200])
 subplot(211)
 plot(t,record(nx+1,:))
 xlabel('Time [s]')
@@ -321,6 +338,7 @@ title('Fault operation, parameter sample time: 100 s')
 
 % Residuals and detectors
 h= figure(17);
+set(h, 'Position',  [100, 100, 100+1400, 100+600])
 subplot(311)
 plot(1:finish,resrecord(:,1:finish)/1e3)
 ylabel('Residuals')
@@ -373,6 +391,7 @@ estimatortest_simulink
 
 % Lissajous figure
 h = figure(9);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 subplot(122)
 plot(smooth(Tcw(start+500:it)-273.15-3,100),smooth(record(4,501:end)-273.15-3,100))
 hold on
@@ -386,18 +405,17 @@ title('Parameter sampling time: 1000 s')
 xlim([15 55])
 ylim([15 55])
 hold off
-saveas(h,'lissajous_1000.png')
+saveas(h,'lissajous.png')
 
 % State observations
 h = figure(12);
+set(h, 'Position',  [100, 100, 100+1400, 100+400])
 subplot(224)
 plot(tcw,hcw(start:it)/1000,'LineWidth',2)
 hold on
 plot(t,record(2,:)/1000,'LineWidth',1.5)
-
 plot(t,record(8,:)/1000,'LineWidth',1.5)
 plot(t,recordf(2,:)/1000,'--')
-
 plot(t,recordf(8,:)/1000,'--')
 hold off
 ylim([-50 450])
@@ -412,6 +430,7 @@ title('Fault operation, parameter sample time: 1000 s')
 saveas(h,'hhat.png')
 
 h = figure(13);
+set(h, 'Position',  [100, 100, 100+1400, 100+400])
 subplot(224)
 plot(tcw,Tcw(start:it)-273.15,'LineWidth',2)
 hold on
@@ -430,6 +449,7 @@ saveas(h,'TAhat.png')
 addpath('C:\Users\u375749\Documents\Thesis\Codes\Measurements')
 load datatreatment
 h = figure(14);
+set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(hBPoriginal/1e3,'LineWidth',1.5)
 hold on
 plot(hBP/1e3,'--','LineWidth',1.5)
@@ -446,6 +466,7 @@ faultconversion
 
 % Fault and input saturation 7748 12367
 h = figure(18);
+set(h, 'Position',  [100, 100, 100+1400, 100+200])
 subplot(121)
 plot([zeros(1,7747) -5*ones(1,12367-7747) zeros(1,length(Y)-12368)],'LineWidth',1.5)
 hold on
@@ -472,6 +493,7 @@ saveas(h,'faultinputs_field.png')
 
 % Residuals and detectors
 h= figure(19);
+set(h, 'Position',  [100, 100, 100+1400, 100+600])
 subplot(321)
 plot(start+2:length(Y),ew/1e3)
 hold on
@@ -528,7 +550,8 @@ saveas(h,'resid_field.png')
 
 % State estimations
 t = start:Ts:finish;
-figure(20)
+h = figure(20);
+set(h, 'Position',  [100, 100, 100+1400, 100+400])
 clf
 subplot(221)
 hold on
@@ -579,5 +602,70 @@ legend({'$\rho_{GC}$','$\rho_{R}$','$\rho_{GCc}$','$\rho_{Rc}$'},...
     'location','southwest','Interpreter','latex')
 saveas(h,'states_field.png')
 
-% TODO: signal whitening plots
+% Residual statistics plot
+resid = resrecord(1,1001:5000)';
+residw = ew(1001:5000)';
+figure(50)
+handle1 = probplot('normal',residw);
+figure(51)
+handle2 = histfit(resid,10);
+h = figure(21);
+set(h, 'Position',  [100, 100, 100+1400, 100+400])
+subplot(221)
+[acf,lags,bounds,handle4] = autocorr(detrend(resid),'NumLags',1000);
+hold on
+hold off
+subplot(222)
+[pxx,f,pxxc] = periodogram(resid,rectwin(length(resid)),...
+    length(resid),1,'ConfidenceLevel',0.99);
+cpxx = cumsum(pxx)./sum(pxx);
+plot(f,cpxx,'b',f,f./max(f)+0.05,'k--',f+0.05*max(f),f./max(f),'k--')
+xlabel('Frequency')
+title('Cum. periodrogram with 99% conf. interval')
+subplot(223)
+handle7 = probplot('normal',resid);
+title('Prob. plot for normal dist.')
+subplot(224)
+handle3 = histfit(residw,50);
+ylabel('Sample frequency')
+title('Histogram of data')
+subplot(221)
+hold on
+[acf,lags,bounds] = autocorr(detrend(residw),'NumLags',1000);
+handle5 = stem(lags,acf,'k');
+plot(lags,bounds'*ones(1,length(lags)),'b--','LineWidth',1.5)
+hold off
+legend([handle4(1) handle5(1)],...
+    {'$\varepsilon$','$\varepsilon_w$'},'Interpreter','latex')
+subplot(222)
+hold on
+[pxx,f,pxxc] = periodogram(residw,rectwin(length(residw)),...
+    length(residw),1,'ConfidenceLevel',0.99);
+cpxx = cumsum(pxx)./sum(pxx);
+plot(f,cpxx,'r')
+hold off
+xlim([0 0.5])
+legend({'$\varepsilon$','$\varepsilon_w$'},'Interpreter','latex')
+subplot(223)
+hold on
+handle6 = scatter(handle1(1).XData,handle1(1).YData,'r')
+hold off
+xlim([-2.5 1.5]*1e4)
+legend([handle6(1) handle7(1)],...
+    {'$\varepsilon$','$\varepsilon_w$'},'Interpreter','latex')
+close(figure(50))
+subplot(224)
+% get(handle3,'Children')
+hold on
+handle8 = bar(handle2(1).XData,handle2(1).YData,'g');
+plot(handle2(2).XData,handle2(2).YData,'r','LineWidth',1.5);
+hold off
+xlim([-1 1]*1e4)
+legend([handle3(1) handle8(1)],{'$\varepsilon$','$\varepsilon_w$'},'Interpreter','latex')
+close(figure(51))
+saveas(h,'whitestats.png')
+
 % structure order choice plots
+residualwhitening
+set(h, 'Position',  [100, 100, 100+1400, 100+400])
+saveas(h,'structurechoice.png')

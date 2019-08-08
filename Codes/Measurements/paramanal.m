@@ -1,4 +1,4 @@
-function paramanal(beststr,Z,direction)
+function figurehandle = paramanal(beststr,Z,direction)
 
 ns8=beststr(8-2,:) %[3 4 1 0 0 1]
 th8=pem(Z,ns8);
@@ -36,28 +36,29 @@ subplot(224)
 resid(Z,th5);
 title('Residue corr., 5 param.')
 if direction == 2
-    saveas(h,'autocorr.png')
+    % saveas(h,'autocorr.png')
 end
-h7=figure(7)
-subplot(221)
-hold on
-zpplot(th2zp(th8,0),2.58);
-h = findobj(gca,'type','line');
-if direction == 2
-    set(h([floor(end/2):end-2]),'Color','r');
-    title('From noise to output, 8 param.')
-end
-hold off
-subplot(222)
-hold on
-zpplot(th2zp(th7,0),2.58);
-h = findobj(gca,'type','line');
-if direction == 2
-    set(h([floor(end/2):end-2]),'Color','r');
-    title('From noise to output, 7 param.')
-end
-hold off
-subplot(223)
+figurehandle = figure(30);
+% h7=figure(7)
+% subplot(221)
+% hold on
+% zpplot(th2zp(th8,0),2.58);
+% h = findobj(gca,'type','line');
+% if direction == 2
+%     set(h([floor(end/2):end-2]),'Color','r');
+%     title('From noise to output, 8 param.')
+% end
+% hold off
+% subplot(222)
+% hold on
+% zpplot(th2zp(th7,0),2.58);
+% h = findobj(gca,'type','line');
+% if direction == 2
+%     set(h([floor(end/2):end-2]),'Color','r');
+%     title('From noise to output, 7 param.')
+% end
+% hold off
+subplot(235)
 hold on
 zpplot(th2zp(th6,0),2.58);
 h = findobj(gca,'type','line');
@@ -66,36 +67,40 @@ if direction == 2
     title('From noise to output, 6 param.')
 end
 hold off
-subplot(224)
+xlabel('Real [rad^-^1]')
+ylabel('Imaginary [i rad^-^1]')
+subplot(236)
 hold on
 zpplot(th2zp(th5,0),2.58);
 h = findobj(gca,'type','line');
 if direction == 2
     set(h([floor(end/2):end-2]),'Color','r');
     title('From noise to output, 5 param.')
-    saveas(h7,'noisetoouput.png')
+    % saveas(h7,'noisetoouput.png')
 end
 hold off
-h8=figure(8)
-subplot(221)
-hold on
-zpplot(th2zp(th8,1),2.58);
-h = findobj(gca,'type','line');
-if direction == 2
-    set(h([floor(end/2):end-2]),'Color','r');
-    title('From input to output, 8 param.')
-end
-hold off
-subplot(222)
-hold on
-zpplot(th2zp(th7,1),2.58);
-h = findobj(gca,'type','line');
-if direction == 2
-    set(h([floor(end/2):end-2]),'Color','r');
-    title('From input to output, 7 param.')
-end
-hold off
-subplot(223)
+xlabel('Real [rad^-^1]')
+ylabel('Imaginary [i rad^-^1]')
+% h8=figure(8)
+% subplot(221)
+% hold on
+% zpplot(th2zp(th8,1),2.58);
+% h = findobj(gca,'type','line');
+% if direction == 2
+%     set(h([floor(end/2):end-2]),'Color','r');
+%     title('From input to output, 8 param.')
+% end
+% hold off
+% subplot(222)
+% hold on
+% zpplot(th2zp(th7,1),2.58);
+% h = findobj(gca,'type','line');
+% if direction == 2
+%     set(h([floor(end/2):end-2]),'Color','r');
+%     title('From input to output, 7 param.')
+% end
+% hold off
+subplot(232)
 hold on
 zpplot(th2zp(th6,1),2.58);
 h = findobj(gca,'type','line');
@@ -104,17 +109,21 @@ if direction == 2
     title('From input to output, 6 param.')
 end
 hold off
-subplot(224)
+xlabel('Real [rad^-^1]')
+ylabel('Imaginary [i rad^-^1]')
+subplot(233)
 hold on
 zpplot(th2zp(th5,1),2.58);
 h = findobj(gca,'type','line');
 if direction == 2
     set(h([floor(end/2):end-2]),'Color','r');
     title('From input to output, 5 param.')
-    saveas(h8,'inputtoouput.png')
+    % saveas(h8,'inputtoouput.png')
 end
 hold off
-h=figure(9)
+xlabel('Real [rad^-^1]')
+ylabel('Imaginary [i rad^-^1]')
+h=figure(40)
 hold on
 subplot(221)
 hold on
@@ -165,9 +174,10 @@ xlabel('Frequency')
 ylabel('Power')
 legend('Forward test','Backward test')
 if direction == 2
-    saveas(h,'periodogram.png')
+    % saveas(h,'periodogram.png')
 end
-% figure(10)
+
+% figure(40)
 % hold on
 % subplot(221)
 % probplot(res8);
