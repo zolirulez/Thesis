@@ -77,7 +77,7 @@ catch
     detectiontime = find(faultrecord(3,2000:end)>0);
     detectiontime = detectiontime(1) + 2000;
 end
-
+tic
 for it = start:finish
     if ~rem(it,100)
         disp(['Iteration ' num2str(it)])
@@ -224,5 +224,5 @@ for it = start:finish
     grecord(1:2,it+1) = [fdCUSUM.g; fdGLR.g];
     faultrecord(1:2,it+1) = [fault1; fault2];
 end
-
+toc
 % plotting_simulink

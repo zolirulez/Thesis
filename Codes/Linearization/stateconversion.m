@@ -2,7 +2,7 @@
 clearvars
 close all
 resolution = 5;
-division = 200;
+division = 50;
 Pbig = linspace(30,100,division+1)*1e5;
 Hbig = linspace(200,525,division+1)*1e3;
 maxerrorP = 0;
@@ -51,27 +51,29 @@ end
 maxerrorP
 maxerrorT
 if 1
-    figure(1)
-    surf(Hbig(2:end),Pbig(2:end),squeeze(paramvectorP(1,:,:)))
-    xlabel('h')
-    ylabel('p')
-    title('par_p_h')
-    figure(2)
-    surf(Hbig(2:end),Pbig(2:end),squeeze(paramvectorP(2,:,:)))
-    xlabel('h')
-    ylabel('p')
-    title('par_p_d')
-    figure(3)
-    surf(Hbig(2:end),Pbig(2:end),squeeze(paramvectorT(1,:,:)))
-    xlabel('h')
-    ylabel('p')
-    title('par_T_h')
-    figure(4)
-    surf(Hbig(2:end),Pbig(2:end),squeeze(paramvectorT(2,:,:)))
-    xlabel('h')
-    ylabel('p')
-    title('par_T_d')
+    handle = figure(1);
+    set(handle, 'Position',  [100, 100, 100+800, 100+400])
+    subplot(221)
+    surf(Hbig(2:end)/1e3,Pbig(2:end)/1e5,squeeze(paramvectorP(1,:,:))/1e5*1e3)
+    xlabel('h [kJ/kg]')
+    ylabel('p [bar]')
+    title('$\partial_{ph}$ [bar kJ$^{-1}$kg]','Interpreter','latex')
+    subplot(222)
+    surf(Hbig(2:end)/1e3,Pbig(2:end)/1e5,squeeze(paramvectorP(2,:,:))/1e5)
+    xlabel('h [kJ/kg]')
+    ylabel('p [bar]')
+    title('$\partial_{p\rho}$ [bar kg m$^{-3}$]','Interpreter','latex')
+    subplot(223)
+    surf(Hbig(2:end)/1e3,Pbig(2:end)/1e5,squeeze(paramvectorT(1,:,:))*1e3)
+    xlabel('h [kJ/kg]')
+    ylabel('p [bar]')
+    title('$\partial_{Th}$ [K kJ$^{-1}$kg]','Interpreter','latex')
+    subplot(224)
+    surf(Hbig(2:end)/1e3,Pbig(2:end)/1e5,squeeze(paramvectorT(2,:,:)))
+    xlabel('h [kJ/kg]')
+    ylabel('p [bar]')
+    title('$\partial_{T\rho}$ [K kg m$^{-3}$]','Interpreter','latex')
 end
-
+saveas(handle,'transferparam.png')
 % Saving
 % save('transferparam.mat','Hbig','Pbig','paramvectorP','paramvectorT')

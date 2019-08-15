@@ -105,7 +105,7 @@ inputSamplef = Uf(start,:)';
 rng(12345)
 parameterRegressor = 0.02;
 rls.L = 1-1e-4;
-
+tic
 for it = start:finish
     if ~rem(it,100)
         disp(['Iteration ' num2str(it)])
@@ -134,8 +134,8 @@ for it = start:finish
         Xsf(3) = Xsf(3)*0.05 + d1f*0.95;
         Xsf(7) = Xsf(7)*0.05 + dR*0.95;
         w = 0.11;
-        Xs(4) = Xs(4)*0.2 + 0.8*(CoolProp.PropsSI('T','P',Y(it,1),'H',Y(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
-        Xsf(4) = Xsf(4)*0.2 + 0.8*(CoolProp.PropsSI('T','P',Yf(it,1),'H',Yf(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xs(4) = Xs(4)*0.5 + 0.5*(CoolProp.PropsSI('T','P',Y(it,1),'H',Y(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
+        Xsf(4) = Xsf(4)*0.5 + 0.5*(CoolProp.PropsSI('T','P',Yf(it,1),'H',Yf(it,5),'CO2')/(w+1) + w/(w+1)*TA0);
         if constrainedEstimator
             % Extreme constraints
             Xs(4) = -constrainer(-Xs(4),-TA0,2);
@@ -327,5 +327,6 @@ for it = start:finish
     grecord(:,it-start+1) = [fdCUSUM.g; fdGLR.g; fdEM.g];
     faultrecord(:,it-start+1) = [fault1; fault2; fault3];
 end
+toc
 
 % plotting
