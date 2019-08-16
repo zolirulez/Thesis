@@ -16,3 +16,26 @@ set(gca,'XTickLabel',[]);
 xlabel('$X_{raw}$','Interpreter','latex')
 ylabel('$X_{f}$','Interpreter','latex')
 saveas(h,'constrainer.png')
+
+h = figure(2);
+set(h, 'Position',  [100, 100, 100+600, 100+200])
+x = [-0.5:.01:0.5];
+y = normpdf(x,0,(1/3)^2);
+plot(x,y)
+y = normpdf(x,0,(1/3)^2*2);
+hold on
+plot(x,y,'r--')
+y = normpdf(x,0.2,(1/3)^2*2);
+plot(x,y,'r-')
+plot([0 0],[0 5],'g--')
+plot([0.2 0.2],[0 5],'g-')
+hold off
+ylim([0 4])
+xticks([])
+yticks([])
+legend({'Normal operation cluster','Faulty operation cluster, no fault',...
+    'Faulty operation cluster, fault','Normal operation residual mean'...
+    ,'Faulty operation residual mean'},'Location','northwest')
+xlabel('Residual value')
+ylabel('Probability density')
+saveas(h,'clusters.png')

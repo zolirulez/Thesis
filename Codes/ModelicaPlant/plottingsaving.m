@@ -148,7 +148,7 @@ simulationstring = 'faultignore_ta0';
 TsParam = 100;
 estimatortest_simulink
 
-% Measurement reestimation
+% Measurement reconstruction
 h = figure(7);
 set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(1000:finish,Y(1001:end,2)/1000)
@@ -276,7 +276,7 @@ load TGC_faultcontrol_ta0.mat
 TsParam = 100;
 estimatortest_simulink
 
-% Measurement reestimation
+% Measurement reconstruction
 h = figure(8);
 set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(1000:finish,Y(1001:end,2)/1000)
@@ -309,7 +309,7 @@ plot(linspace(10,60,2),linspace(10,60,2))
 hold off
 xlabel('Theoretical approx. of temperature [C]')
 ylabel('Estimation [C]')
-legend('Original','Reestimated')
+legend('Original','Reconstructed')
 title('Parameter sampling time: 100 s')
 xlim([15 55])
 ylim([15 55])
@@ -440,7 +440,7 @@ plot(linspace(10,60,2),linspace(10,60,2))
 hold off
 xlabel('Theoretical approx. of temperature [C]')
 ylabel('Estimation [C]')
-legend('Original','Reestimated')
+legend('Original','Reconstructed')
 title('Parameter sampling time: 1000 s')
 xlim([15 55])
 ylim([15 55])
