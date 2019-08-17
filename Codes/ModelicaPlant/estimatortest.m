@@ -3,7 +3,7 @@
 if ~exist('fielddata')
     clearvars
 else
-    clearvars
+%     clearvars
     load fielddata
 end
 format long
