@@ -53,15 +53,15 @@ load faultcontrol
 plot(COP_sim.signals.values(:,1),'LineWidth',2)
 load faultcontrol_ta0
 plot(COP_sim.signals.values(:,1))
-plot([5000 5000],[-1e5 1.5e5],'--')
-plot([14000 14000],[-1e5 1.5e5],'--')
+plot([5000 5000],[-1e5 1.5e5],'k--')
+plot([14000 14000],[-1e5 1.5e5],'k--')
 hold off
 xlabel('Time [s]')
 ylabel('Coefficient of Performance [-]')
 xlim([1000 20000])
 ylim([0 3])
 legend('Ignored flat fault','Ignored insulation fault',...
-    'Fault operation, flat fault','Fault operation, insulation fault')
+    'Fault handling, flat fault','Fault handling, insulation fault')
 saveas(h,'COP.png')
 
 % Input saturation plot
@@ -77,12 +77,12 @@ xlabel('Time [s]')
 ylabel('Input capacity ratios [-]')
 xlim([1000 20000])
 ylim([0 1.1])
-legend({'$CR_{HV}$, ignored fault,','$CR_{HV}$, fault operation',...
-    '$CR_{IT}$, ignored fault,','$CR_{IT}$, fault operation'},...
+legend({'$CR_{HV}$, ignored fault,','$CR_{HV}$, fault handling',...
+    '$CR_{IT}$, ignored fault,','$CR_{IT}$, fault handling'},...
     'Interpreter','latex')
 saveas(h,'inputs.png')
 
-% Ambient temperature and fault operation chronology plots
+% Ambient temperature and fault handling chronology plots
 h = figure(4);
 set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(uy_sim.signals.values(:,12)-273.15)
@@ -115,15 +115,15 @@ hold on
 plot(Dm_h_sim.signals.values(:,[6 7])/1e3)
 load faultcontrol_ta0
 plot(Dm_h_sim.signals.values(:,[6 7])/1e3,'--')
-plot([5000 5000],[-1e5 1.5e5],'--')
-plot([14000 14000],[-1e5 1.5e5],'--')
+plot([5000 5000],[-1e5 1.5e5],'k--')
+plot([14000 14000],[-1e5 1.5e5],'k--')
 hold off
 xlabel('Time [s]')
 ylabel('Evaporator outlet enthalpies [kJ/kg]')
 xlim([1000 20000])
 ylim([430 470])
 legend({'Reference value','Cooler, ignored fault,','Freezer, ignored fault',...
-    'Cooler, fault operation,','Freezer, fault operation'})
+    'Cooler, fault handling','Freezer, fault handling'})
 saveas(h,'evapenthalpies.png')
 
 
@@ -183,7 +183,7 @@ hold off
 ylim([-50 450])
 xlabel('Time [s]')
 ylabel('Enthalpy [kJ/kg]')
-title('Fault ignoring controller, parameter sample time: 100 s')
+title('Fault ignoring controller, set-point sample time: 100 s')
 % saveas(h,'hhat.png')
 
 h = figure(13);
@@ -195,7 +195,7 @@ plot(t,recordf(4,:)-273.15,'--')
 hold off
 xlabel('Time [s]')
 ylabel('Temperature [C]')
-title('Fault ignoring controller, parameter sample time: 100 s')
+title('Fault ignoring controller, set-point sample time: 100 s')
 % saveas(h,'TAhat.png')
 
 % -----------------------------------------------------------------
@@ -216,7 +216,7 @@ hold off
 ylim([-50 450])
 xlabel('Time [s]')
 ylabel('Enthalpy [kJ/kg]')
-title('Fault ignoring controller, parameter sample time: 1000 s')
+title('Fault ignoring controller, set-point sample time: 1000 s')
 % saveas(h,'hhat.png')
 
 h = figure(13);
@@ -228,7 +228,7 @@ plot(t,recordf(4,:)-273.15)
 hold off
 xlabel('Time [s]')
 ylabel('Temperature [C]')
-title('Fault ignoring controller, parameter sample time: 1000 s')
+title('Fault ignoring controller, set-point sample time: 1000 s')
 % saveas(h,'TAhat.png')
 
 h = figure(15);
@@ -310,14 +310,14 @@ hold off
 xlabel('Theoretical approx. of temperature [C]')
 ylabel('Estimation [C]')
 legend('Original','Reconstructed')
-title('Parameter sampling time: 100 s')
+title('Set-point sampling time: 100 s')
 xlim([15 55])
 ylim([15 55])
 hold off
 
 % Trace of P1 and innovation
 h = figure(10);
-set(h, 'Position',  [100, 100, 100+1400, 100+200])
+set(h, 'Position',  [100, 100, 100+1400, 100+500])
 subplot(211)
 plot(t,record(nx+1,:))
 xlabel('Time [s]')
@@ -356,7 +356,7 @@ hold off
 ylim([-50 450])
 xlabel('Time [s]')
 ylabel('Enthalpy [kJ/kg]')
-title('Fault operational controller, parameter sample time: 100 s')
+title('Fault handling controller, set-point sample time: 100 s')
 % saveas(h,'hhat.png')
 
 % State observations: temperature
@@ -369,7 +369,7 @@ plot(t,recordf(4,:)-273.15,'--')
 hold off
 xlabel('Time [s]')
 ylabel('Temperature [C]')
-title('Fault operational controller, parameter sample time: 100 s')
+title('Fault handling controller, set-point sample time: 100 s')
 % saveas(h,'TAhat.png')
 
 % Residuals and detectors
@@ -378,7 +378,8 @@ set(h, 'Position',  [100, 100, 100+1400, 100+600])
 subplot(311)
 plot(1:finish,resrecord(:,1:finish)/1e3)
 hold on
-plot([5000 5000],[-1e5 1.5e5],'--')
+plot([5000 5000],[-1e5 1.5e5],'k--')
+plot([14000 14000],[-1e5 1.5e5],'k--')
 hold off
 ylabel('Residuals')
 xlabel('Time [s]')
@@ -441,7 +442,7 @@ hold off
 xlabel('Theoretical approx. of temperature [C]')
 ylabel('Estimation [C]')
 legend('Original','Reconstructed')
-title('Parameter sampling time: 1000 s')
+title('Set-point sampling time: 1000 s')
 xlim([15 55])
 ylim([15 55])
 hold off
@@ -449,7 +450,7 @@ saveas(h,'lissajous.png')
 
 % State observations
 h = figure(12);
-set(h, 'Position',  [100, 100, 100+1200, 100+400])
+set(h, 'Position',  [100, 100, 100+1000, 100+1400])
 subplot(224)
 plot(tcw,hcw(start:it)/1000,'LineWidth',2)
 hold on
@@ -466,7 +467,7 @@ legend({'Theoretical approximation of $h_{GC}$','$\hat{h}_{GC}$, fault ignored',
     '$\hat{h}_{GC}$, fault considered',...
     '$\Delta h$, fault considered'},'Location','southwest'...
     ,'Interpreter','Latex');
-title('Fault operation, parameter sample time: 1000 s')
+title('Fault handling controller, set-point sample time: 1000 s')
 saveas(h,'hhat.png')
 
 h = figure(13);
@@ -482,7 +483,7 @@ ylabel('Temperature [C]')
 legend({'Theoretical approximation of $T_{GC}$','$\hat{T}_{A,GC}$, fault ignored',......
     '$\hat{T}_{A,GC}$, fault considered'},'Location','southwest'...
     ,'Interpreter','Latex');
-title('Fault operational controller, parameter sample time: 1000 s')
+title('Fault handling controller, set-point sample time: 1000 s')
 saveas(h,'TAhat.png')
 
 % -----------------------------------------------------------------
@@ -492,11 +493,11 @@ h = figure(14);
 set(h, 'Position',  [100, 100, 100+700, 100+200])
 plot(hBPoriginal/1e3,'LineWidth',1.5)
 hold on
-plot(hBP/1e3,'--','LineWidth',1.5)
+plot(hBP/1e3,'--','LineWidth',3)
 hold off
 xlabel('Time [s]')
 ylabel('Enthalpy measurement [kJ/kg]')
-legend({'Before correction','After placing on the saturation line'},'Location','best')
+legend({'Before correction','After placing on the saturation curve'},'Location','best')
 saveas(h,'datatreatment.png')
 
 % Running the field experiment
@@ -547,8 +548,8 @@ subplot(321)
 plot(start+2:length(Y),ew/1e3)
 hold on
 plot(start+1:length(Y),resrecord(1,:)/1e3,'LineWidth',2)
-plot([7748 7748],[-1e5 1.5e5],'--','LineWidth',1.5)
-plot([12367 12367],[-1e5 1.5e5],'--','LineWidth',1.5)
+plot([7748 7748],[-1e5 1.5e5],'k--','LineWidth',1.5)
+plot([12367 12367],[-1e5 1.5e5],'k--','LineWidth',1.5)
 hold off
 ylabel('Residuals')
 xlabel('Time [s]')
@@ -558,8 +559,8 @@ legend({'Whitened $\dot{\tilde{Q}}$','$\dot{\tilde{Q}}$ [kW]'},'Interpreter','la
 subplot(322)
 plot(start+1:length(Y),resrecord(2,:)/1e3)
 hold on
-plot([7748 7748],[-1e5 1.5e5],'--')
-plot([12367 12367],[-1e5 1.5e5],'--')
+plot([7748 7748],[-1e5 1.5e5],'k--')
+plot([12367 12367],[-1e5 1.5e5],'k--')
 hold off
 xlim([2000 length(Y)])
 ylim([-150 50])
@@ -707,7 +708,7 @@ hold on
 handle6 = scatter(handle1(1).XData,handle1(1).YData,'r')
 hold off
 xlim([-2.5 1.5]*1e4)
-legend([handle6(1) handle7(1)],...
+legend([handle7(1) handle6(1)],...
     {'$\varepsilon$','$\varepsilon_w$'},'Interpreter','latex')
 close(figure(50))
 subplot(224)

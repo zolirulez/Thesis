@@ -14,7 +14,7 @@ hold off
 set(gca,'YTickLabel',[]);
 set(gca,'XTickLabel',[]);
 xlabel('$X_{raw}$','Interpreter','latex')
-ylabel('$X_{f}$','Interpreter','latex')
+ylabel('$X_{c}$','Interpreter','latex')
 saveas(h,'constrainer.png')
 
 h = figure(2);

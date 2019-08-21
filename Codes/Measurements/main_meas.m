@@ -1,4 +1,5 @@
-clearvars -except h dprime % For evaluation, the handle and the statistics
+% For evaluation, the handle and the statistics
+clearvars -except h dprime fdCUSUM fdGLR falsealarm misseddetection
 % Reading data
 load fielddata
 addpath('C:\Users\u375749\Documents\Thesis\Codes\ModelicaPlant')
